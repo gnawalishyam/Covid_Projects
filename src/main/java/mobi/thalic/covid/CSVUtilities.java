@@ -1,0 +1,136 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package mobi.thalic.covid;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Class to process comma delimited files
+ * @author GaryL
+ */
+public class CSVUtilities {
+    
+    /**
+     * Method to read a csv file and return a list of list of strings
+     * @param fileName to process a complete path (directory must exist)
+     * @return a list of list of strings
+     */
+    public List<List<String>> getCsvFile(String fileName) {
+        //Declare variables
+        
+        List<List<String>> listStringLists = new ArrayList<>();
+        BufferedReader csvReader;
+        String row;
+        
+        
+        try {
+            csvReader = new BufferedReader(new FileReader(fileName));
+            while ((row = csvReader.readLine()) != null) {
+                List<String> stringList = new ArrayList<>();
+                if (!row.contains("\"")) {
+                    String[] data = row.split(",");
+                    stringList.addAll(Arrays.asList(data));
+                } else {
+                    int position = 0;
+                    do {
+                        int beginQuote = row.indexOf('"', position);
+                        int endQuote = row.indexOf('"', beginQuote + 1);
+                        if (!(beginQuote < 0 || endQuote < 0)) {
+                            if (beginQuote > position) {
+                                String temp = row.substring(position, beginQuote);
+                                String[] data = row.split(",");
+                                stringList.addAll(Arrays.asList(data));
+                            }
+                            String temp = row.substring(beginQuote, endQuote);
+                            temp = temp.replace("\"", "");
+                            stringList.add(temp);
+                            position = endQuote + 2;
+                        } else {
+                            if (position < row.length()) {
+                                String temp = row.substring(position);
+                                String[] data = temp.split(",");
+                                stringList.addAll(Arrays.asList(data));
+                                position = row.length();
+                            }
+                        }
+                    } while(position < row.length());
+                }
+                
+                if (stringList.size() > 0) {
+                    listStringLists.add(stringList);
+                }
+            }
+            csvReader.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return listStringLists;
+    }
+    
+    /**
+     * Method to write a csv data to a file
+     * @param lists the data in the form of a list of lists of strings
+     * @param fileName to save data to
+     * @throws IOException
+     */
+    public void writeCSVFile(List<List<String>> lists, String fileName) 
+            throws IOException {
+        // convert list of list of string to one string
+        String contents = createCSVString(lists);
+        
+        // write the contents to the file
+        try ( // open the file
+                FileWriter myWriter = new FileWriter(fileName)) {
+            // write the contents to the file
+            myWriter.write(contents);
+            // close the file
+        }
+    }
+
+    /**
+     * Method to create the comma-separated values file and add yesterday's date
+     * @param lists the data to convert
+     * @return a complete comma-separated values string
+     */
+    private String createCSVString(List<List<String>> lists) 
+            throws IOException {
+        // Declare variables
+        String[] stringArray = new String[lists.size()];
+        StringBuilder finalString = new StringBuilder();
+        // loop through the lists
+        for (int i = 0; i < lists.size(); i++) {
+            for (int j = 0; j < lists.get(i).size(); j++) {
+                // if first entry in list initialize and put first entry in
+                if (j == 0) {
+                    stringArray[i] = '"' + lists.get(i).get(j) + '"' + ',';
+                    // if last entry in list new line
+                } else if (j == lists.get(i).size() - 1) {
+                    if (i != lists.size() - 1) {
+                        // add entry and new line
+                        stringArray[i] += '"' + lists.get(i).get(j) + '"' + '\n';
+                    } else {
+                        // add entry
+                        stringArray[i] += '"' + lists.get(i).get(j) + '"';
+                    }
+                } else {
+                    // add entry and comma
+                    stringArray[i] += '"' + lists.get(i).get(j) + '"' + ',';
+                }
+            }
+        }
+        // put all rows into one string
+        for (String s : stringArray) {
+            finalString.append(s);
+        }
+        return finalString.toString();
+    }
+}
