@@ -27,9 +27,9 @@ public class CovidData {
     private final String PATH = "C:\\covid\\";
     // Declare database variables
     private final String DATABASE_CONNECTION_STRING = 
-            "jdbc:postgresql://217e600.online-server.cloud:5432/covid";
-    private final String DATABASE_USER_NAME = "gary";
-    private final String DATABASE_USER_PASSWORD = "P2,B7Ey4vON@0aVGASJE";
+            "jdbc:postgresql://52d9225.online-server.cloud:5432/covid";
+    private final String DATABASE_USER_NAME = "java_program";
+    private final String DATABASE_USER_PASSWORD = "3peb3NnzY_2Md@*yGb";
     /**
      * Method to process world-o-meter scrape to comma-separated values files
      * @return results of WorldOMeter scrapes

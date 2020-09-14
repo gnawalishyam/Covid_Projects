@@ -19,25 +19,10 @@
     // Build Queries
     define ("WORLD_QUERY" , "SELECT total_cases, total_deaths, 
                 active_cases, total_date
-                FROM countries INNER JOIN totals ON countries.id = 
-                    totals.country_id
-                WHERE countries.country = 'World' AND total_date = 
-                    (SELECT MAX(total_date) FROM totals)");
-    define ("TABLE_QUERY", "with b as (SELECT totals.country_id, 
-                country, total_cases, total_deaths, active_cases, 
-                population, total_date 
-            FROM countries INNER JOIN totals ON countries.id = 
-                totals.country_id 
-            LEFT OUTER JOIN populations ON countries.id = 
-                populations.country_id 
-            WHERE total_date = (SELECT MAX(total_date) FROM totals) 
-            ORDER BY total_cases DESC)
-            SELECT country, total_cases, total_deaths, active_cases, 
-                population, total_date, b.total_cases - 
-                (SELECT total_cases FROM totals  
-            WHERE totals.country_id = b.country_id AND 
-                totals.total_date = b.total_date -1) AS new_cases 
-            FROM b");
+                FROM latest_world_totals");
+    define ("TABLE_QUERY", "SELECT country, total_cases, total_deaths, 
+                active_cases, population, total_date, new_cases 
+                FROM main_table");
     // get results from world query
     $worldResult = pg_query($db_conn, WORLD_QUERY);
     if (!$worldResult) {
@@ -59,7 +44,7 @@
     echo "<td>" . number_format(intval(($row[1])/ 
             intval($worldRow[0])) * 100) . "%" . "</td>";
     echo "<td>" . number_format(intval($row[6])) . "</td>";
-    echo "<td>" . number_format(intval([3])) . "</td>";
+    echo "<td>" . number_format(intval($row[3])) . "</td>";
     echo "<td>" . number_format((intval($row[3]) / 
             intval($worldRow[2])) * 100) . "%" . "</td>";
     echo "<td>" . number_format(intval($row[2])) . "</td>";

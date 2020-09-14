@@ -30,9 +30,9 @@ public class GetCovidData {
      */
     public static void main(String[] args)  {
         final String DATABASE_CONNECTION_STRING = 
-            "jdbc:postgresql://217e600.online-server.cloud:5432/covid";
-        final String DATABASE_USER_NAME = "gary";
-        final String DATABASE_USER_PASSWORD = "P2,B7Ey4vON@0aVGASJE";
+            "jdbc:postgresql://52d9225.online-server.cloud:5432/covid";
+        final String DATABASE_USER_NAME = "java_program";
+        final String DATABASE_USER_PASSWORD = "3peb3NnzY_2Md@*yGb";
         final String WORLDOMETER_US = 
                 "https://www.worldometers.info/coronavirus/country/us/";
         final String WORLDOMETER_ALL = 
