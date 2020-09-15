@@ -49,18 +49,14 @@ public class CovidData {
     private final HashMap<String, String> configMap = new HashMap<>();
     
     public CovidData () {
-        String results = getConfigParams();
-        if (!results.equals("")) {
-            System.out.println(results);
-            System.exit(1);
-        }
+        getConfigParams();
     }
     
     /**
      * Method to get the configuration items
      * @return 
      */
-    private String getConfigParams() {
+    private void getConfigParams() {
         //Declare variables
         List<List<String>> listStringLists = new ArrayList<>();
         BufferedReader fileReader;
@@ -85,9 +81,10 @@ public class CovidData {
             }
             fileReader.close();
         } catch (IOException e) {
-            results = "IOException: " + e.getMessage();
+            System.out.println(results);
+            System.out.println("IOException: " + e.getMessage());
+            System.exit(5);
         }
-        return results;
     }
     
     /**
@@ -129,6 +126,7 @@ public class CovidData {
             unitedStatesStrings = addYesterday(unitedStatesStrings);
             // write to database
             writeUSToDatabase(unitedStatesStrings);
+            result = "Successfully acquired United States covid data";
         }
         // return result string
         return result;
@@ -158,6 +156,7 @@ public class CovidData {
             worldStrings = addYesterday(worldStrings);
             // write to database
             writeWorldToDatabase(worldStrings);
+            result = "Successfully acquired world covid data";
         }
         // return result string
         return result;
@@ -219,6 +218,7 @@ public class CovidData {
              database.closeConnection(conn);
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
+            System.exit(3);
         }
         return newLists;
     }
@@ -263,6 +263,7 @@ public class CovidData {
         } catch (SQLException | ParseException e) {
             // output SQL exception messages
             System.out.println(e.getMessage());
+            System.exit(2);
         } 
     }
     
@@ -331,6 +332,7 @@ public class CovidData {
         } catch (SQLException | ParseException e) {
             // output SQL exception messages
             System.out.println(e.getMessage());
+            System.exit(4);
         }
     }
 }

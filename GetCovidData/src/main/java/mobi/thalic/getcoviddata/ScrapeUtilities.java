@@ -49,6 +49,7 @@ public class ScrapeUtilities {
             htmlString = doc.toString();
         } catch (IOException e) {
             System.out.println("An error occurred. jsoup: " + e);
+            System.exit(1);
         }
 
         // if no html return nothing
