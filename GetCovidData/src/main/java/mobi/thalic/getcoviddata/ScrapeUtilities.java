@@ -47,7 +47,7 @@ public class ScrapeUtilities {
             Document doc = Jsoup.connect(url).get();
             // convert html to a string
             htmlString = doc.toString();
-        } catch (IOException e) {
+        } catch (IOException e) { 
             System.out.println("An error occurred. jsoup: " + e);
             System.exit(1);
         }

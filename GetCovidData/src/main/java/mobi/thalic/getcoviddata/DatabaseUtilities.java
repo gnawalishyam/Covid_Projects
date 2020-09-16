@@ -43,7 +43,7 @@ public class DatabaseUtilities {
      * @param connectionString database to connect to
      * @param userName of database user
      * @param userPassword for the user
-     * @return usable connection
+     * @return usable connection 
      * @throws SQLException on SQL error
      */
     public Connection connect(String connectionString, String userName, 

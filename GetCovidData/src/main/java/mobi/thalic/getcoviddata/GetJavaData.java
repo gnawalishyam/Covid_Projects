@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 /**
- * Main java class
+ * Main java class 
  * @author Gary Larson gary@thalic.mobi
  */
 public class GetJavaData {

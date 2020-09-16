@@ -330,7 +330,7 @@ public class CovidData {
             // close database connection
             databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
-            // output SQL exception messages
+            // output SQL exception messages 
             System.out.println(e.getMessage());
             System.exit(4);
         }
