@@ -155,7 +155,7 @@ public class CovidData {
             CSVUtilities csvUtilities = new CSVUtilities();
             try {
                 csvUtilities.writeCSVFile(worldStrings, createFileName(WORLD_BASE_NAME));
-                // Send success message to console
+                // Send success message to console 
                 result = "Successfully acquired world covid data";
             } catch(IOException e) {
                 result = "IO error: " + e.getMessage();
