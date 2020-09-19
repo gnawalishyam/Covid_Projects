@@ -44,7 +44,6 @@ import java.util.Locale;
 public class CovidData {
     // Declare constants
     private final String YESTERDAY = getYesterdaysDate();
-    private final String PATH = "C:\\covid\\";
     // Declare configuration options
     private final HashMap<String, String> configMap = new HashMap<>();
     
@@ -64,7 +63,7 @@ public class CovidData {
         
         
         try {
-            fileReader = new BufferedReader(new FileReader("get_covid_data.ini"));
+            fileReader = new BufferedReader(new FileReader("/etc/get_covid_data.ini"));
             while ((inputString = fileReader.readLine()) != null) {
                 if (inputString.contains(",")) {
                     String[] data = inputString.split(",");
