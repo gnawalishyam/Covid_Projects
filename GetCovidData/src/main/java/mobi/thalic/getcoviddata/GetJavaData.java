@@ -34,7 +34,7 @@ public class GetJavaData {
      */
     public static void main(String[] args) {
         CovidData covidData = new CovidData();
-        String results = covidData.testDatabase();
+        String results = covidData.processWorldometerScrape();
         System.out.println(results);
     }
 }
