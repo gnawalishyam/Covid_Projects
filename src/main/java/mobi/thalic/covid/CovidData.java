@@ -5,6 +5,8 @@
  */
 package mobi.thalic.covid;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,10 +28,47 @@ public class CovidData {
     private final String YESTERDAY = getYesterdaysDate();
     private final String PATH = "C:\\covid\\";
     // Declare database variables
-    private final String DATABASE_CONNECTION_STRING = 
-            "jdbc:postgresql://52d9225.online-server.cloud:5432/covid";
-    private final String DATABASE_USER_NAME = "java_program";
-    private final String DATABASE_USER_PASSWORD = "3peb3NnzY_2Md@*yGb";
+    private final HashMap<String, String> configMap = new HashMap<>();
+    
+    public CovidData () {
+        getConfigParams();
+    }
+    
+    /**
+     * Method to get the configuration items
+     * @return 
+     */
+    private void getConfigParams() {
+        //Declare variables
+        List<List<String>> listStringLists = new ArrayList<>();
+        BufferedReader fileReader;
+        String inputString, results = "";
+        
+        
+        try {
+            fileReader = new BufferedReader(new FileReader("/etc/get_covid_data.ini"));
+            while ((inputString = fileReader.readLine()) != null) {
+                if (inputString.contains(",")) {
+                    String[] data = inputString.split(",");
+                    if (data.length == 2) {
+                        configMap.put(data[0], data[1]);
+                    } else {
+                        results = "Error in configuration file";
+                        break;
+                    }
+                } else {
+                    results = "Seperation error in configuration file";
+                    break;
+                }
+            }
+            fileReader.close();
+        } catch (IOException e) {
+            System.out.println(results);
+            System.out.println("IOException: " + e.getMessage());
+            System.exit(5);
+        }
+    }
+    
     /**
      * Method to process world-o-meter scrape to comma-separated values files
      * @return results of WorldOMeter scrapes
@@ -44,14 +83,35 @@ public class CovidData {
         return result;
     }
     
+    public String testDatabase(){
+        // Declare variables
+        String results = "";
+        DatabaseUtilities database = new DatabaseUtilities();
+        try (
+            Connection conn = 
+                database.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));) {
+            long population = database.selectStatePopulation(conn, 
+                                    "USA Total");
+            results = String.format(Locale.getDefault(), 
+                    "USA Total population = %,d", population);
+            database.closeConnection(conn);
+        } catch (SQLException ex) {
+            return results = ex.getMessage();
+        }
+        return results;
+    }
+    
     public void loadOurWorldInData(String fileName) {
         CSVUtilities csvUtilities = new CSVUtilities();
         List<List<String>> lists = csvUtilities.getCsvFile(PATH + fileName);
-        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
-            Connection conn = databaseUtilities.connect(
-                    DATABASE_CONNECTION_STRING, DATABASE_USER_NAME, 
-                    DATABASE_USER_PASSWORD);
+            Connection conn = 
+                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));
             databaseUtilities.insertOurWorldInData(conn, lists);
             databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
@@ -59,33 +119,6 @@ public class CovidData {
         }
     }
     
-//    /**
-//     * Method to backup a database
-//     * @return 
-//     */
-//    public String backupDatabase() {
-//        // Declare and initialize variables
-//        String result = "";
-//        String fileName = PATH + "backups\\covid_" + getTodaysDate() + ".sql";
-//        // initialize database variable
-//        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
-//        
-//        try {
-//            // open connection to database
-//            Connection conn = databaseUtilities.connect(
-//                    DATABASE_CONNECTION_STRING, DATABASE_USER_NAME, 
-//                    DATABASE_USER_PASSWORD);
-//            // backup database
-//            databaseUtilities.backupDatabase(conn, fileName);
-//            // close database connection
-//            databaseUtilities.closeConnection(conn);
-//            result = "Sucessfully backed up database";
-//        } catch (SQLException e) {
-//            // output SQL exception messages
-//            result = e.getMessage();
-//        }
-//        return result;
-//    }
    
     /**
      * Method to scrape and process United States data
@@ -171,12 +204,13 @@ public class CovidData {
      */    
     private void writeUSToDatabase(List<List<String>> lists) {
         // initialize database variable
-        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
             // open connection to database
-            Connection conn = databaseUtilities.connect(
-                    DATABASE_CONNECTION_STRING, DATABASE_USER_NAME, 
-                    DATABASE_USER_PASSWORD);
+            Connection conn = 
+                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
             databaseUtilities.insertUSTotals(conn, lists);
             // close database connection
@@ -196,12 +230,13 @@ public class CovidData {
      */
     private void writeWorldToDatabase(List<List<String>> lists) {
         // initialize database variable
-        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
             // open connection to database
-            Connection conn = databaseUtilities.connect(
-                    DATABASE_CONNECTION_STRING, DATABASE_USER_NAME, 
-                    DATABASE_USER_PASSWORD);
+            Connection conn = 
+                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
             databaseUtilities.insertWorldTotals(conn, lists);   
             // close database connection
@@ -298,6 +333,7 @@ public class CovidData {
                 newLists.add(strings);
             }
         });
+        updatePopulation("World", newLists);
         return newLists;
     }
 
@@ -314,50 +350,72 @@ public class CovidData {
         long totalPopulation = 0L;
         String temp;
         long population;
-        DataBaseUtilities database = new DataBaseUtilities();
-        try (
-                Connection conn = database.connect(DATABASE_CONNECTION_STRING, 
-                        DATABASE_USER_NAME, DATABASE_USER_PASSWORD);) {
-            // loop through lists
-            for (int i = 0; i < lists.size(); i++) {
-                // eliminate unnecessary columns
-                if (!lists.get(i).get(0).equals("Total:")) {
-                    List<String> strings = new ArrayList<>();
-                    // get state name
-                    strings.add(lists.get(i).get(1));
-                    // get total cases
-                    strings.add(lists.get(i).get(2));
-                    // get total deaths
-                    strings.add(lists.get(i).get(4));
-                    // get active cases
-                    strings.add(lists.get(i).get(7));
-                    // get population
-                    if (i == 0) {
-                        strings.add("Population");
-                    } else {
-                        if (strings.get(0).equals("Total:")) {
-                            population = database.selectStatePopulation(conn, 
-                                    "USA Total");
-                        } else {
-                            population = database.selectStatePopulation(conn, 
-                                    strings.get(0));
-                        }
-
-                        NumberFormat numberFormat = 
-                                NumberFormat.getNumberInstance(Locale.US);
-                        temp = numberFormat.format(population);
-                        strings.add(temp);
-                    }
-
+        // loop through lists
+        for (int i = 0; i < lists.size(); i++) {
+            // eliminate unnecessary columns
+            if (!lists.get(i).get(0).equals("Total:")) {
+                List<String> strings = new ArrayList<>();
+                // get state name
+                strings.add(lists.get(i).get(1));
+                // get total cases
+                strings.add(lists.get(i).get(2));
+                // get total deaths
+                strings.add(lists.get(i).get(4));
+                // get active cases
+                strings.add(lists.get(i).get(7));
+                // get population
+                strings.add(lists.get(i).get(12));
                 // add new list to new lists
-                    newLists.add(strings);
+                newLists.add(strings);
+            }
+        } 
+        updatePopulation("UnitesStates", newLists);
+        return newLists;
+    }
+    
+    private void updatePopulation(String country, List<List<String>> lists) {
+        // initialize database variable
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+        long adjustment;
+        try {
+            // open connection to database
+            Connection conn = 
+                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));
+            for (int i = 1; i < lists.size(); i++) {
+                long population = convertPopulation(lists.get(i).get(4));
+                String place = lists.get(i).get(0);
+                if (country == "UnitedStates") {
+                    long statePopulation = databaseUtilities
+                            .selectStatePopulation(conn, place);
+                    adjustment = statePopulation / 10;
+                    if (statePopulation > population - adjustment && 
+                            statePopulation < population + adjustment && 
+                            population != statePopulation) {
+                        databaseUtilities.updateStatePopulation(conn, 
+                            place, population);
+                    }
+                } else {
+                    long countryPopulation = databaseUtilities
+                            .selectWorldPopulation(conn, place);
+                    adjustment = countryPopulation / 10;
+                    if (countryPopulation > population - adjustment && 
+                            countryPopulation < population + adjustment && 
+                            countryPopulation != population) {
+                        databaseUtilities.updateWorldPopulation(conn, 
+                                place, population);
+                        if (place.equals("USA")) {
+                            databaseUtilities.updateStatePopulation(conn, 
+                                "USA Total", population);
+                        }
+                    }
                 }
             }
-             conn.close();
-        } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
-        }
-        return newLists;
+        } catch (SQLException e) {
+            // output SQL exception messages
+            System.out.println(e.getMessage());
+        } 
     }
 
     /**
@@ -367,10 +425,16 @@ public class CovidData {
      * @return new total population
      */
     private long getTotalPopulation(long totalPopulation, List<String> strings) {
-        // Declare variables
-        String temp;
-        // get population
-        temp = strings.get(4);
+        return totalPopulation += convertPopulation(strings.get(4));
+    }
+    
+    /**
+     * Method to convert population from string to long
+     * @param temp string population to convert
+     * @return population as a long
+     */
+    private long convertPopulation(String temp) {
+        long population = 0;
         // remove commas
         temp = temp.replace(",", "");
         // remove bracketed value to avoid exception
@@ -380,9 +444,9 @@ public class CovidData {
         // if empty ignore
         if (!temp.isEmpty()) {
             // add to total
-            totalPopulation += Long.parseLong(temp);
+            population = Long.parseLong(temp);
         }
-        return totalPopulation;
+        return population;
     }
 
     /**

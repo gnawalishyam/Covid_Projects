@@ -171,12 +171,6 @@ public class DatabaseUtilities {
                         conn.prepareStatement(INSERT_COUNTRY_TOTALS_SQL)) {
                 // add country id parameter to statement
                 String tempString = lists.get(i).get(0);
-                if (tempString.equals("RÃ©union")) {
-                    tempString = "Réunion";
-                }
-                if (tempString.equals("CuraÃ§ao")) {
-                    tempString = "Curaçao";
-                }
                 statement.setInt(1, selectCountryId(conn, tempString));
                 // add total cases parameter to statement
                 tempString = lists.get(i).get(1);
@@ -217,13 +211,6 @@ public class DatabaseUtilities {
         }
     }
     
-    /**
-     * Method to get country id from country name
-     * @param conn to use
-     * @param country to find
-     * @return country id
-     * @throws SQLException on SQL error
-     */
     public int selectCountryId(Connection conn, String country) 
             throws SQLException {
         // Declare constant
@@ -231,13 +218,23 @@ public class DatabaseUtilities {
             "SELECT id FROM countries WHERE country = ?;";
         // Declare variables
         int countryId = 0;
+        String tempString = country;
         // add country parameter
+        if (tempString.equals("RÃ©union")) {
+            tempString = "Réunion";
+        }
+        if (tempString.equals("CuraÃ§ao")) {
+            tempString = "Curaçao";
+        }
+        if (tempString.equals("Oceania")) {
+            tempString = "Australia/Oceania";
+        }
         try ( 
             // statement to use
             PreparedStatement statement = 
                     conn.prepareStatement(SELECT_COUNTRY_ID)) {
             // add state parameter
-            statement.setString(1, country);
+            statement.setString(1, tempString);
             // check if results
             try ( 
                 // run query and get results
@@ -317,5 +314,101 @@ public class DatabaseUtilities {
                 }
             }
         }
+    }
+    
+    /**
+     * Method to update the state populations
+     * @param conn to database
+     * @param state of the population to update
+     * @param population to update
+     * @throws SQLException that could be thrown
+     */
+    public void updateStatePopulation(Connection conn, String state, 
+            long population) throws SQLException {
+        // declare constant
+        final String UPDATE_POPULATION_SQL = 
+            "UPDATE populations SET population = ? WHERE state_id = ?;";
+        // add state parameter
+        try ( 
+            // statement to use
+            PreparedStatement statement = 
+                    conn.prepareStatement(UPDATE_POPULATION_SQL)) {
+            //add population parameter
+            statement.setLong(1, population);
+            // add state parameter
+            statement.setInt(2, selectStateId(conn, state));
+            // run statement
+            statement.execute();
+            //clase statement
+            statement.close();
+        }
+    }
+    
+    /**
+     * Method to update world populations
+     * @param conn to database
+     * @param country of population to update
+     * @param population to update
+     * @throws SQLException that could be thrown 
+     */
+    public void updateWorldPopulation(Connection conn, String country, 
+            long population) throws SQLException {
+        // declare constant
+        final String UPDATE_POPULATION_SQL = 
+            "UPDATE populations SET population = ? WHERE country_id = ?;";
+        // add country parameter
+        try ( 
+            // statement to use
+            PreparedStatement statement = 
+                    conn.prepareStatement(UPDATE_POPULATION_SQL)) {
+            //add population parameter
+            statement.setLong(1, population);
+            // add state parameter
+            statement.setInt(2, selectCountryId(conn, country));
+            // run statement
+            statement.execute();
+            //clase statement
+            statement.close();
+        }
+    }
+    
+    /**
+     * Method to get world population
+     * @param conn to database
+     * @param country to get population for
+     * @return population
+     * @throws SQLException that could be thrown
+     */
+    public long selectWorldPopulation(Connection conn, String country) 
+            throws SQLException {
+        // Declare constant
+        final String SELECT_POPULATION = 
+            "SELECT population FROM populations WHERE country_id = ?;";
+        // Declare variables
+        long population = 0;
+        //add state paramenter to statement
+        try ( 
+            // statement to use
+            PreparedStatement statement = 
+                    conn.prepareStatement(SELECT_POPULATION)) {
+            //add state paramenter to statement
+            statement.setInt(1, selectCountryId(conn, country));
+            // check for result(s)
+            try ( 
+                // run query with results
+                ResultSet resultSet = statement.executeQuery()) {
+                // check for result(s)
+                while (resultSet.next()) {
+                    // get population from results
+                    population = resultSet.getLong(1);
+                } 
+                // close results
+                resultSet.close();
+                // close statement
+                statement.close();
+            }
+        }
+        // return population
+        return population;
     }
 }

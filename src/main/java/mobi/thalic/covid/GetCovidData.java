@@ -68,6 +68,7 @@ public class GetCovidData {
         
         CovidData covidData = new CovidData();
         String results = covidData.processWorldometerScrape();
+        //String results = covidData.testDatabase();
         System.out.println(results);
         //covidData.loadOurWorldInData("files\\owid-covid-data.csv");
 

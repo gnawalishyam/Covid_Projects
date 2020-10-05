@@ -23,9 +23,6 @@
  */
 package mobi.thalic.getcoviddata;
 
-import java.util.Collections;
-import java.util.HashMap;
-
 /**
  * Main java class 
  * @author Gary Larson gary@thalic.mobi
@@ -37,7 +34,7 @@ public class GetJavaData {
      */
     public static void main(String[] args) {
         CovidData covidData = new CovidData();
-        String results = covidData.processWorldometerScrape();
+        String results = covidData.testDatabase();
         System.out.println(results);
     }
 }

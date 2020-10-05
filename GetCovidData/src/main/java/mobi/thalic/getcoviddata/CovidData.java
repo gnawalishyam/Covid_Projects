@@ -28,7 +28,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,7 +45,6 @@ public class CovidData {
     private final String YESTERDAY = getYesterdaysDate();
     // Declare configuration options
     private final HashMap<String, String> configMap = new HashMap<>();
-    
     public CovidData () {
         getConfigParams();
     }
@@ -84,6 +82,26 @@ public class CovidData {
             System.out.println("IOException: " + e.getMessage());
             System.exit(5);
         }
+    }
+    
+    public String testDatabase(){
+        // Declare variables
+        String results;
+        DatabaseUtilities database = new DatabaseUtilities();
+        try (
+            Connection conn = 
+                database.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));) {
+            long population = database.selectStatePopulation(conn, 
+                                    "USA Total");
+            results = String.format(Locale.getDefault(), 
+                    "USA Total population = %,d", population);
+            database.closeConnection(conn);
+        } catch (SQLException ex) {
+            return ex.getMessage();
+        }
+        return results;
     }
     
     /**
@@ -162,8 +180,40 @@ public class CovidData {
     }
     
     /**
-     * Method to remove unwanted columns from United States lists
+     * Method to remove unwanted columns
      * @param lists to modify
+     * @return modified lists
+     */
+    private List<List<String>> createWorldStrings(List<List<String>> lists) {
+        // Declare variables
+        List<List<String>> newLists = new ArrayList<>();
+        // loop through lists putting only what is required in new lists
+        lists.forEach(list -> {
+            List<String> strings = new ArrayList<>();
+            // eliminate untitled or unnecessary columns
+            if (!list.get(1).isEmpty() && !list.get(1).equals("Total:")) {
+                // get country name
+                strings.add(list.get(1));
+                // get total cases
+                strings.add(list.get(2));
+                // get total deaths
+                strings.add(list.get(4));
+                // get active cases
+                strings.add(list.get(8));
+                // get population
+                strings.add(list.get(14));
+                // add new list to new lists
+                newLists.add(strings);
+            }
+        });
+        updatePopulation("World", newLists);
+        return newLists;
+    }
+
+    /**
+     * Method to remove unwanted columns
+     * @param lists to modify
+     * @param map with state populations
      * @return modified lists
      */
     private List<List<String>> createUnitedStatesStrings(List<List<String>> lists) {
@@ -173,53 +223,93 @@ public class CovidData {
         long totalPopulation = 0L;
         String temp;
         long population;
-        DatabaseUtilities database = new DatabaseUtilities();
-        try (
-                Connection conn = 
-                    database.connect(configMap.get("DB_CONNECTION"), 
-                    configMap.get("DB_USER_NAME"), 
-                    configMap.get("DB_USER_PASSWORD"));) {
-            // loop through lists
-            for (int i = 0; i < lists.size(); i++) {
-                // eliminate unnecessary columns
-                if (!lists.get(i).get(0).equals("Total:")) {
-                    List<String> strings = new ArrayList<>();
-                    // get state name
-                    strings.add(lists.get(i).get(1));
-                    // get total cases
-                    strings.add(lists.get(i).get(2));
-                    // get total deaths
-                    strings.add(lists.get(i).get(4));
-                    // get active cases
-                    strings.add(lists.get(i).get(7));
-                    // get population
-                    if (i == 0) {
-                        strings.add("Population");
-                    } else {
-                        if (strings.get(0).equals("Total:")) {
-                            population = database.selectStatePopulation(conn, 
-                                    "USA Total");
-                        } else {
-                            population = database.selectStatePopulation(conn, 
-                                    strings.get(0));
-                        }
-
-                        NumberFormat numberFormat = 
-                                NumberFormat.getNumberInstance(Locale.US);
-                        temp = numberFormat.format(population);
-                        strings.add(temp);
-                    }
-
+        // loop through lists
+        for (int i = 0; i < lists.size(); i++) {
+            // eliminate unnecessary columns
+            if (!lists.get(i).get(0).equals("Total:")) {
+                List<String> strings = new ArrayList<>();
+                // get state name
+                strings.add(lists.get(i).get(1));
+                // get total cases
+                strings.add(lists.get(i).get(2));
+                // get total deaths
+                strings.add(lists.get(i).get(4));
+                // get active cases
+                strings.add(lists.get(i).get(7));
+                // get population
+                strings.add(lists.get(i).get(12));
                 // add new list to new lists
-                    newLists.add(strings);
+                newLists.add(strings);
+            }
+        } 
+        updatePopulation("UnitesStates", newLists);
+        return newLists;
+    }
+    
+    private void updatePopulation(String country, List<List<String>> lists) {
+        // initialize database variable
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+        long adjustment;
+        try {
+            // open connection to database
+            Connection conn = 
+                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));
+            for (int i = 1; i < lists.size(); i++) {
+                long population = convertPopulation(lists.get(i).get(4));
+                String place = lists.get(i).get(0);
+                if (country.equals("UnitedStates")) {
+                    long statePopulation = databaseUtilities
+                            .selectStatePopulation(conn, place);
+                    adjustment = statePopulation / 10;
+                    if (statePopulation > population - adjustment && 
+                            statePopulation < population + adjustment && 
+                            population != statePopulation) {
+                        databaseUtilities.updateStatePopulation(conn, 
+                            place, population);
+                    }
+                } else {
+                    long countryPopulation = databaseUtilities
+                            .selectWorldPopulation(conn, place);
+                    adjustment = countryPopulation / 10;
+                    if (countryPopulation > population - adjustment && 
+                            countryPopulation < population + adjustment && 
+                            countryPopulation != population) {
+                        databaseUtilities.updateWorldPopulation(conn, 
+                                place, population);
+                        if (place.equals("USA")) {
+                            databaseUtilities.updateStatePopulation(conn, 
+                                "USA Total", population);
+                        }
+                    }
                 }
             }
-             database.closeConnection(conn);
-        } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
-            System.exit(3);
+        } catch (SQLException e) {
+            // output SQL exception messages
+            System.out.println(e.getMessage());
+        } 
+    }
+    
+    /**
+     * Method to convert population from string to long
+     * @param temp string population to convert
+     * @return population as a long
+     */
+    private long convertPopulation(String temp) {
+        long population = 0;
+        // remove commas
+        temp = temp.replace(",", "");
+        // remove bracketed value to avoid exception
+        if (temp.contains("[")) {
+            temp = temp.substring(0, temp.indexOf('['));
         }
-        return newLists;
+        // if empty ignore
+        if (!temp.isEmpty()) {
+            // add to total
+            population = Long.parseLong(temp);
+        }
+        return population;
     }
 
     /**
@@ -279,36 +369,6 @@ public class CovidData {
         // remove one day
         LocalDateTime yesterday = today.minusDays(1);
         return dateTimeFormatter.format(yesterday);
-    }
-    
-    /**
-     * Method to remove unwanted columns from World lists
-     * @param lists to modify
-     * @return modified lists
-     */
-    private List<List<String>> createWorldStrings(List<List<String>> lists) {
-        // Declare variables
-        List<List<String>> newLists = new ArrayList<>();
-        // loop through lists putting only what is required in new lists
-        lists.forEach(list -> {
-            List<String> strings = new ArrayList<>();
-            // eliminate untitled or unnecessary columns
-            if (!list.get(1).isEmpty() && !list.get(1).equals("Total:")) {
-                // get country name
-                strings.add(list.get(1));
-                // get total cases
-                strings.add(list.get(2));
-                // get total deaths
-                strings.add(list.get(4));
-                // get active cases
-                strings.add(list.get(8));
-                // get population
-                strings.add(list.get(14));
-                // add new list to new lists
-                newLists.add(strings);
-            }
-        });
-        return newLists;
     }
     
     /**
