@@ -67,8 +67,8 @@ public class GetCovidData {
         
         // TODO add country if country code is not found in select country id in database utilities
         CovidData covidData = new CovidData();
-        String results = covidData.processWorldometerScrape();
-        //String results = covidData.testDatabase();
+        //String results = covidData.processWorldometerScrape();
+        String results = covidData.testDatabase();
         System.out.println(results);
         //covidData.loadOurWorldInData("files\\owid-covid-data.csv");
 
