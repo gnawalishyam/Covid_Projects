@@ -142,8 +142,9 @@ public class CovidData {
             // add date
             unitedStatesStrings = addYesterday(unitedStatesStrings);
             // write to database
-            writeUSToDatabase(unitedStatesStrings);
-            result = "Successfully acquired United States covid data";
+            String tempResult = writeUSToDatabase(unitedStatesStrings);
+            result = tempResult + "\n" + 
+                    "Successfully acquired United States covid data";
         }
         // return result string
         return result;
@@ -172,8 +173,9 @@ public class CovidData {
             // add date
             worldStrings = addYesterday(worldStrings);
             // write to database
-            writeWorldToDatabase(worldStrings);
-            result = "Successfully acquired world covid data";
+            String tempResult = writeWorldToDatabase(worldStrings);
+            result = tempResult + "\n" + 
+                    "Successfully acquired world covid data";
         }
         // return result string
         return result;
@@ -335,8 +337,10 @@ public class CovidData {
     /**
      * Method to write US totals to the database
      * @param lists of data to process
+     * @return results
      */
-    private void writeUSToDatabase(List<List<String>> lists) {
+    private String writeUSToDatabase(List<List<String>> lists) {
+        String result;
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
@@ -346,14 +350,14 @@ public class CovidData {
                     configMap.get("DB_USER_NAME"), 
                     configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
-            databaseUtilities.insertUSTotals(conn, lists);
+            result = databaseUtilities.insertUSTotals(conn, lists);
             // close database connection
             databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
             // output SQL exception messages
-            System.out.println(e.getMessage());
-            System.exit(2);
+            result = e.getMessage() + "\n";
         } 
+        return result;
     }
     
     /**
@@ -375,7 +379,9 @@ public class CovidData {
      * Method to write World totals to the database
      * @param lists of data to process
      */
-    private void writeWorldToDatabase(List<List<String>> lists) {
+    private String writeWorldToDatabase(List<List<String>> lists) {
+        // initialize variable
+        String result;
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
@@ -385,13 +391,13 @@ public class CovidData {
                     configMap.get("DB_USER_NAME"), 
                     configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
-            databaseUtilities.insertWorldTotals(conn, lists);   
+            result = databaseUtilities.insertWorldTotals(conn, lists);   
             // close database connection
             databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
             // output SQL exception messages 
-            System.out.println(e.getMessage());
-            System.exit(4);
+            result = e.getMessage();
         }
+        return result;
     }
 }

@@ -70,7 +70,7 @@ public class CovidData {
     }
     
     /**
-     * Method to process world-o-meter scrape to comma-separated values files
+     * Method to process world-o-meter scrape to enter data into a database
      * @return results of WorldOMeter scrapes
      */
     public String processWorldometerScrape(){
@@ -122,7 +122,7 @@ public class CovidData {
    
     /**
      * Method to scrape and process United States data
-     * @return results
+     * @return results of WorldOMeter scrapes
      */
     private String processUnitedStatesScrape () {
         // Declare constants
@@ -144,17 +144,9 @@ public class CovidData {
             // add date
             unitedStatesStrings = addYesterday(unitedStatesStrings);
             // write to database
-            writeUSToDatabase(unitedStatesStrings);
-            // write to file
-            CSVUtilities csvUtilities = new CSVUtilities();
-            try {
-                csvUtilities.writeCSVFile(unitedStatesStrings, 
-                        createFileName(US_BASE_NAME));
-                // Send success message to console
-                result = "Successfully acquired United States covid data";
-            } catch(IOException e) {
-                result = "IO error: " + e.getMessage();
-            }
+            String tempResult = writeUSToDatabase(unitedStatesStrings);
+            result = tempResult + "\n" + 
+                    "Successfully acquired United States covid data";
         }
         // return result string
         return result;
@@ -183,16 +175,9 @@ public class CovidData {
             // add date
             worldStrings = addYesterday(worldStrings);
             // write to database
-            writeWorldToDatabase(worldStrings);
-            // write to file
-            CSVUtilities csvUtilities = new CSVUtilities();
-            try {
-                csvUtilities.writeCSVFile(worldStrings, createFileName(WORLD_BASE_NAME));
-                // Send success message to console 
-                result = "Successfully acquired world covid data";
-            } catch(IOException e) {
-                result = "IO error: " + e.getMessage();
-            }
+            String tempResult = writeWorldToDatabase(worldStrings);
+            result = tempResult + "\n" + 
+                    "Successfully acquired world covid data";
         }
         // return result string
         return result;
@@ -201,53 +186,53 @@ public class CovidData {
     /**
      * Method to write US totals to the database
      * @param lists of data to process
-     */    
-    private void writeUSToDatabase(List<List<String>> lists) {
+     * @return results
+     */
+    private String writeUSToDatabase(List<List<String>> lists) {
+        String result;
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
             // open connection to database
             Connection conn = 
-                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
-                configMap.get("DB_USER_NAME"), 
-                configMap.get("DB_USER_PASSWORD"));
+                    databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                    configMap.get("DB_USER_NAME"), 
+                    configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
-            databaseUtilities.insertUSTotals(conn, lists);
+            result = databaseUtilities.insertUSTotals(conn, lists);
             // close database connection
             databaseUtilities.closeConnection(conn);
-        } catch (SQLException e) {
+        } catch (SQLException | ParseException e) {
             // output SQL exception messages
-            System.out.println(e.getMessage());
-        } catch (ParseException e) {
-            // output parse exception messages
-            System.out.println(e.getMessage());
-        }
+            result = e.getMessage() + "\n";
+        } 
+        return result;
     }
     
     /**
      * Method to write World totals to the database
      * @param lists of data to process
      */
-    private void writeWorldToDatabase(List<List<String>> lists) {
+    private String writeWorldToDatabase(List<List<String>> lists) {
+        // initialize variable
+        String result;
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
             // open connection to database
             Connection conn = 
-                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
-                configMap.get("DB_USER_NAME"), 
-                configMap.get("DB_USER_PASSWORD"));
+                    databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                    configMap.get("DB_USER_NAME"), 
+                    configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
-            databaseUtilities.insertWorldTotals(conn, lists);   
+            result = databaseUtilities.insertWorldTotals(conn, lists);   
             // close database connection
             databaseUtilities.closeConnection(conn);
-        } catch (SQLException e) {
-            // output SQL exception messages
-            System.out.println(e.getMessage());
-        } catch (ParseException e) {
-            // output parse exception messages
-            System.out.println(e.getMessage());
+        } catch (SQLException | ParseException e) {
+            // output SQL exception messages 
+            result = e.getMessage();
         }
+        return result;
     }
 
     /**
