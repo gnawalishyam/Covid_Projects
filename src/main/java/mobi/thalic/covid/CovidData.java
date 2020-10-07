@@ -10,7 +10,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -85,7 +84,7 @@ public class CovidData {
     
     public String testDatabase(){
         // Declare variables
-        String results = "";
+        String results = null;
         DatabaseUtilities database = new DatabaseUtilities();
         try (
             Connection conn = 
@@ -358,6 +357,11 @@ public class CovidData {
         return newLists;
     }
     
+    /**
+     * Method to update population
+     * @param country either World or UnitedStates
+     * @param lists to update
+     */
     private void updatePopulation(String country, List<List<String>> lists) {
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
@@ -371,15 +375,21 @@ public class CovidData {
             for (int i = 1; i < lists.size(); i++) {
                 long population = convertPopulation(lists.get(i).get(4));
                 String place = lists.get(i).get(0);
-                if (country == "UnitedStates") {
+                if (country.equals("UnitedStates")) {
                     long statePopulation = databaseUtilities
                             .selectStatePopulation(conn, place);
                     adjustment = statePopulation / 10;
                     if (statePopulation > population - adjustment && 
                             statePopulation < population + adjustment && 
                             population != statePopulation) {
-                        databaseUtilities.updateStatePopulation(conn, 
-                            place, population);
+                        if (databaseUtilities.selectStatePopulation(conn, 
+                                place) > 0) {
+                            databaseUtilities.updateStatePopulation(conn, 
+                                place, population);
+                        } else {
+                            databaseUtilities.insertStatePopulation(conn, 
+                                    place, population);
+                        }
                     }
                 } else {
                     long countryPopulation = databaseUtilities
@@ -388,8 +398,14 @@ public class CovidData {
                     if (countryPopulation > population - adjustment && 
                             countryPopulation < population + adjustment && 
                             countryPopulation != population) {
+                        if (databaseUtilities.selectWorldPopulation(conn, 
+                                place)> 0) {
                         databaseUtilities.updateWorldPopulation(conn, 
                                 place, population);
+                        } else {
+                            databaseUtilities.insertWorldPopulation(conn, 
+                                    place, population);
+                        }
                         if (place.equals("USA")) {
                             databaseUtilities.updateStatePopulation(conn, 
                                 "USA Total", population);

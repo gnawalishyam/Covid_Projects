@@ -530,4 +530,60 @@ public class DatabaseUtilities {
         // return population
         return population;
     }
+    
+    /**
+     * Method to insert population into database
+     * @param conn to the database
+     * @param state to enter
+     * @param population to enter
+     * @throws SQLException 
+     */
+    public void insertStatePopulation(Connection conn, String state, 
+            long population) throws SQLException {
+        // declare constant
+        final String INSERT_POPULATION_SQL = 
+            "INSERT INTO populations (state_id, population) VALUES (?, ?);";
+        // add state parameter
+        try ( 
+            // statement to use
+            PreparedStatement statement = 
+                    conn.prepareStatement(INSERT_POPULATION_SQL)) {
+            // add state parameter
+            statement.setInt(1, selectStateId(conn, state));
+            //add population parameter
+            statement.setLong(2, population);
+            // run statement
+            statement.execute();
+            //clase statement
+            statement.close();
+        }
+    }
+    
+    /**
+     * Method to insert world population
+     * @param conn to database
+     * @param country to insert population for
+     * @param population to insert
+     * @throws SQLException if an error
+     */
+    public void insertWorldPopulation(Connection conn, String country, 
+            long population) throws SQLException {
+        // declare constant
+        final String INSERT_POPULATION_SQL = 
+            "INSERT INTO populations (country_id, population) VALUES (?, ?);";
+        // add state parameter
+        try ( 
+            // statement to use
+            PreparedStatement statement = 
+                    conn.prepareStatement(INSERT_POPULATION_SQL)) {
+            // add state parameter
+            statement.setInt(1, selectCountryId(conn, country));
+            //add population parameter
+            statement.setLong(2, population);
+            // run statement
+            statement.execute();
+            //clase statement
+            statement.close();
+        }
+    }
 }

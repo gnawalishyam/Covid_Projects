@@ -248,6 +248,11 @@ public class CovidData {
         return newLists;
     }
     
+    /**
+     * Method to update population
+     * @param country either World or UnitedStates
+     * @param lists to update
+     */
     private void updatePopulation(String country, List<List<String>> lists) {
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
@@ -268,8 +273,14 @@ public class CovidData {
                     if (statePopulation > population - adjustment && 
                             statePopulation < population + adjustment && 
                             population != statePopulation) {
-                        databaseUtilities.updateStatePopulation(conn, 
-                            place, population);
+                        if (databaseUtilities.selectStatePopulation(conn, 
+                                place) > 0) {
+                            databaseUtilities.updateStatePopulation(conn, 
+                                place, population);
+                        } else {
+                            databaseUtilities.insertStatePopulation(conn, 
+                                    place, population);
+                        }
                     }
                 } else {
                     long countryPopulation = databaseUtilities
@@ -278,8 +289,14 @@ public class CovidData {
                     if (countryPopulation > population - adjustment && 
                             countryPopulation < population + adjustment && 
                             countryPopulation != population) {
+                        if (databaseUtilities.selectWorldPopulation(conn, 
+                                place)> 0) {
                         databaseUtilities.updateWorldPopulation(conn, 
                                 place, population);
+                        } else {
+                            databaseUtilities.insertWorldPopulation(conn, 
+                                    place, population);
+                        }
                         if (place.equals("USA")) {
                             databaseUtilities.updateStatePopulation(conn, 
                                 "USA Total", population);
