@@ -244,7 +244,7 @@ public class CovidData {
                 newLists.add(strings);
             }
         } 
-        updatePopulation("UnitesStates", newLists);
+        updatePopulation("UnitedStates", newLists);
         return newLists;
     }
     
@@ -269,37 +269,35 @@ public class CovidData {
                 if (country.equals("UnitedStates")) {
                     long statePopulation = databaseUtilities
                             .selectStatePopulation(conn, place);
+                    if (statePopulation == 0) {
+                        databaseUtilities.insertStatePopulation(conn, 
+                                    place, population);
+                    } else {
                     adjustment = statePopulation / 10;
-                    if (statePopulation > population - adjustment && 
-                            statePopulation < population + adjustment && 
-                            population != statePopulation) {
-                        if (databaseUtilities.selectStatePopulation(conn, 
-                                place) > 0) {
+                        if (statePopulation > population - adjustment && 
+                                statePopulation < population + adjustment && 
+                                population != statePopulation) {
                             databaseUtilities.updateStatePopulation(conn, 
                                 place, population);
-                        } else {
-                            databaseUtilities.insertStatePopulation(conn, 
-                                    place, population);
                         }
                     }
                 } else {
                     long countryPopulation = databaseUtilities
                             .selectWorldPopulation(conn, place);
-                    adjustment = countryPopulation / 10;
-                    if (countryPopulation > population - adjustment && 
-                            countryPopulation < population + adjustment && 
-                            countryPopulation != population) {
-                        if (databaseUtilities.selectWorldPopulation(conn, 
-                                place)> 0) {
-                        databaseUtilities.updateWorldPopulation(conn, 
-                                place, population);
-                        } else {
-                            databaseUtilities.insertWorldPopulation(conn, 
+                    if (countryPopulation == 0) {
+                        databaseUtilities.insertWorldPopulation(conn, 
                                     place, population);
-                        }
-                        if (place.equals("USA")) {
-                            databaseUtilities.updateStatePopulation(conn, 
-                                "USA Total", population);
+                    } else {
+                        adjustment = countryPopulation / 10;
+                        if (countryPopulation > population - adjustment && 
+                                countryPopulation < population + adjustment && 
+                                countryPopulation != population) {
+                            databaseUtilities.updateWorldPopulation(conn, 
+                                    place, population);
+                            if (place.equals("USA")) {
+                                databaseUtilities.updateStatePopulation(conn, 
+                                    "USA Total", population);
+                            }
                         }
                     }
                 }
