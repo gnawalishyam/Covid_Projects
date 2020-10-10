@@ -269,9 +269,11 @@ public class CovidData {
                 if (country.equals("UnitedStates")) {
                     long statePopulation = databaseUtilities
                             .selectStatePopulation(conn, place);
-                    if (statePopulation == 0) {
-                        databaseUtilities.insertStatePopulation(conn, 
+                    if (statePopulation == 0 && population != 0) {
+                        if (databaseUtilities.selectStateId(conn, place) != 0) {
+                            databaseUtilities.insertStatePopulation(conn, 
                                     place, population);
+                        }
                     } else {
                     adjustment = statePopulation / 10;
                         if (statePopulation > population - adjustment && 
@@ -284,9 +286,12 @@ public class CovidData {
                 } else {
                     long countryPopulation = databaseUtilities
                             .selectWorldPopulation(conn, place);
-                    if (countryPopulation == 0) {
-                        databaseUtilities.insertWorldPopulation(conn, 
+                    if (countryPopulation == 0 && population != 0) {
+                        if (databaseUtilities.selectCountryId(conn, place) != 
+                                0) {
+                            databaseUtilities.insertWorldPopulation(conn, 
                                     place, population);
+                        }
                     } else {
                         adjustment = countryPopulation / 10;
                         if (countryPopulation > population - adjustment && 
