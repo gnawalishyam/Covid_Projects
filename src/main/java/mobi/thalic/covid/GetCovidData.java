@@ -6,10 +6,13 @@
 package mobi.thalic.covid;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -62,15 +65,24 @@ public class GetCovidData {
             "SELECT 'Totals', SUM(total_cases), SUM(total_deaths), " + 
                 "SUM(active_cases), SUM(population), total_date " +
             "FROM a GROUP BY total_date";
+        final String PATH = "C:\\covid\\";
+        final String FILENAME = PATH + "Files\\open_stats_coronavirus.json";
 
         
         
         // TODO add country if country code is not found in select country id in database utilities
         CovidData covidData = new CovidData();
         //String results = covidData.processWorldometerScrape();
-        String results = covidData.testDatabase();
-        System.out.println(results);
+        //String results = covidData.testDatabase();
+        //System.out.println(results);
         //covidData.loadOurWorldInData("files\\owid-covid-data.csv");
-
+        JSONUtilities jsonUtilities = new JSONUtilities();
+        try {
+            List<List<String>> worldData = 
+                jsonUtilities.processJsonArrayFile(FILENAME);
+            covidData.addStatCountries(worldData);
+        } catch(Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+        }
     }
 }

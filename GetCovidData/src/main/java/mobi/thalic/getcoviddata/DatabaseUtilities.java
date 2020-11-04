@@ -307,15 +307,36 @@ public class DatabaseUtilities {
         // declare constant
         final String INSERT_COUNTRY_SQL = 
             "INSERT INTO countries (country, country_code) VALUES (?, ?);";
-        // add state parameter
+        // add country parameter
         try ( 
             // statement to use
             PreparedStatement statement = 
                     conn.prepareStatement(INSERT_COUNTRY_SQL)) {
-            // add state parameter
+            // add country parameter
             statement.setString(1, country);
             //add population parameter
             statement.setString(2, countryCode);
+            // run statement
+            statement.execute();
+            // close statement
+            statement.close();
+        }
+    }
+    
+    public void insertStatCountry(Connection conn, String country) 
+            throws SQLException {
+        // Declare constant
+        final String INSERT_STAT_COUNTRY_SQL = 
+            "INSERT INTO stat_countries (country, country_code) VALUES (?, ?);";
+        // add country parameters
+        try (
+            // statement to use
+            PreparedStatement statement = 
+                     conn.prepareStatement(INSERT_STAT_COUNTRY_SQL)) {
+            // add country parameter
+            statement.setString(1, country);
+            // attempt to get country code
+            statement.setString(2, selectCountryCode(conn, country));
             // run statement
             statement.execute();
             // close statement

@@ -15,8 +15,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  *
@@ -96,6 +98,29 @@ public class CovidData {
             results = String.format(Locale.getDefault(), 
                     "USA Total population = %,d", population);
             database.closeConnection(conn);
+        } catch (SQLException ex) {
+            return results = ex.getMessage();
+        }
+        return results;
+    }
+    
+    public String addStatCountries(List<List<String>> lists) {
+        // Declare variables
+        String results = "Done";
+        Set<String> set = new HashSet<>();
+        for (List<String> strings : lists) {
+            set.add(strings.get(2));
+        }
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+        try (
+            Connection conn = 
+                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                configMap.get("DB_USER_NAME"), 
+                configMap.get("DB_USER_PASSWORD"));) {
+            for(String string : set) {
+                databaseUtilities.insertStatCountry(conn, string);
+            }
+            databaseUtilities.closeConnection(conn);
         } catch (SQLException ex) {
             return results = ex.getMessage();
         }
