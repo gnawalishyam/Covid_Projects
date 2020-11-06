@@ -31,6 +31,9 @@ public class CovidData {
     // Declare database variables
     private final HashMap<String, String> configMap = new HashMap<>();
     
+    /**
+     * Default constructor
+     */
     public CovidData () {
         getConfigParams();
     }
@@ -71,6 +74,50 @@ public class CovidData {
     }
     
     /**
+     * Method to create state dailies
+     * @return results
+     */
+    public String createStateDailies() {
+        String results;
+        // initialize database variable
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+        try {
+            // open connection to database
+            Connection conn = 
+                    databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                    configMap.get("DB_USER_NAME"), 
+                    configMap.get("DB_USER_PASSWORD"));
+            // insert data in total table in database
+            results = databaseUtilities.createStateDailies(conn);
+        } catch(SQLException e) {
+            results = e.getMessage();
+        }
+        return results;
+    }
+    
+    /**
+     * Method to create country dailies
+     * @return results
+     */
+    public String createCountryDailies() {
+        String results;
+        // initialize database variable
+        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+        try {
+            // open connection to database
+            Connection conn = 
+                    databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
+                    configMap.get("DB_USER_NAME"), 
+                    configMap.get("DB_USER_PASSWORD"));
+            // insert data in total table in database
+            results = databaseUtilities.createCountryDailies(conn);
+        } catch(SQLException e) {
+            results = e.getMessage();
+        }
+        return results;
+    }
+    
+    /**
      * Method to process world-o-meter scrape to enter data into a database
      * @return results of WorldOMeter scrapes
      */
@@ -84,9 +131,13 @@ public class CovidData {
         return result;
     }
     
+    /**
+     * Method to test the availability of the database
+     * @return 
+     */
     public String testDatabase(){
         // Declare variables
-        String results = null;
+        String results;
         DatabaseUtilities database = new DatabaseUtilities();
         try (
             Connection conn = 
@@ -99,18 +150,23 @@ public class CovidData {
                     "USA Total population = %,d", population);
             database.closeConnection(conn);
         } catch (SQLException ex) {
-            return results = ex.getMessage();
+            results = ex.getMessage();
         }
         return results;
     }
     
+    /**
+     * Method to add statistiques countries to the database
+     * @param lists to be added
+     * @return 
+     */
     public String addStatCountries(List<List<String>> lists) {
         // Declare variables
         String results = "Done";
         Set<String> set = new HashSet<>();
-        for (List<String> strings : lists) {
+        lists.forEach(strings -> {
             set.add(strings.get(2));
-        }
+        });
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try (
             Connection conn = 
@@ -122,11 +178,15 @@ public class CovidData {
             }
             databaseUtilities.closeConnection(conn);
         } catch (SQLException ex) {
-            return results = ex.getMessage();
+            results = ex.getMessage();
         }
         return results;
     }
     
+    /**
+     * Method to add our world in data to the database
+     * @param fileName of the file
+     */
     public void loadOurWorldInData(String fileName) {
         CSVUtilities csvUtilities = new CSVUtilities();
         List<List<String>> lists = csvUtilities.getCsvFile(PATH + fileName);
@@ -214,22 +274,31 @@ public class CovidData {
      */
     private String writeUSToDatabase(List<List<String>> lists) {
         String result;
+        Connection conn = null;
         // initialize database variable
         DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
             // open connection to database
-            Connection conn = 
+            conn = 
                     databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
                     configMap.get("DB_USER_NAME"), 
                     configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
             result = databaseUtilities.insertUSTotals(conn, lists);
-            // close database connection
-            databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
             // output SQL exception messages
             result = e.getMessage() + "\n";
-        } 
+        } finally {
+            // close database connection
+            if (conn != null) {
+                try {
+                databaseUtilities.closeConnection(conn);
+                } catch (SQLException e) {
+                    // output SQL exception messages
+                    result = e.getMessage() + "\n";
+                }
+            }
+        }
         return result;
     }
     
@@ -493,101 +562,3 @@ public class CovidData {
         return hashMap;
     }
 }
-
-//        put all data from files in delivered into database
-//        String Path = "C:\\covid\\delivered";
-//        String fileName = "";
-//        //Creating a File object for directory
-//        File directoryPath = new File(Path);
-//        //List of all files and directories
-//        String contents[] = directoryPath.list();
-//        CSVUtilities csvUtilities = new CSVUtilities();
-//        
-//        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
-//        try {
-//            Connection conn = databaseUtilities.connect(
-//                    DATABASE_CONNECTION_STRING, DATABASE_USER_NAME, 
-//                    DATABASE_USER_PASSWORD);
-//            for (String content : contents) {
-//                fileName = Path + "\\" + content;
-//                System.out.println(fileName);
-//                List<List<String>> csvList = csvUtilities.getCsvFile(fileName);
-//                if (content.contains("world")) {
-//                    databaseUtilities.insertWorldTotals(conn, csvList);
-//                } else {
-//                    databaseUtilities.insertUSTotals(conn, csvList);
-//                } 
-//            }
-//            databaseUtilities.closeConnection(conn);
-//        } catch (SQLException e) {
-//            System.out.println(e.getMessage());
-//        } catch (ParseException e) {
-//            System.out.println(e.getMessage());
-//        }
-
-
-//        // add region to countries
-//        ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
-//        List<List<String>> worldStrings = 
-//                scrapeUtilities.getTableData(WORLDOMETER_ALL);
-//        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
-//        try {
-//            Connection conn = databaseUtilities.connect(DATABASE_CONNECTION_STRING,
-//                    DATABASE_USER_NAME, DATABASE_USER_PASSWORD);
-//            for (List<String> countryList : worldStrings) {
-//                // 1= country 15 = region
-//                if (!countryList.get(14).equals("")) {
-//                    databaseUtilities.updateWorldRegion(conn, 
-//                            countryList.get(1), countryList.get(15));
-//                }
-//            }
-//            conn.close();
-//        } catch(SQLException e) {
-//            System.out.println(e.getMessage());
-//        }
-
-
-//        // Add countries and populations had to update populations after all were 0
-//        String Path = "C:\\covid\\delivered";
-//        String fileName = "";
-//        //Creating a File object for directory
-//        File directoryPath = new File(Path);
-//        //List of all files and directories
-//        String contents[] = directoryPath.list();
-//        System.out.println("List of files and directories in the specified directory:");
-//        for (String content : contents) {
-//            if (content.contains("world")) {
-//                fileName = Path + "\\" + content;
-//                break;
-//            }
-//        }
-//        CSVUtilities csvUtilities = new CSVUtilities();
-//        List<List<String>> worldList = csvUtilities.getCsvFile(fileName);
-//        DataBaseUtilities databaseUtilities = new DataBaseUtilities();
-//        try {
-//            Connection conn = databaseUtilities.connect(DATABASE_CONNECTION_STRING,
-//                    DATABASE_USER_NAME, DATABASE_USER_PASSWORD);
-//            for (List<String> worldList1 : worldList) {
-//                if (!(worldList1.get(4).equals("") || 
-//                        worldList1.get(4).equals("Population"))) {
-//                    String countryCode = databaseUtilities.selectCountryCode(
-//                            conn, worldList1.get(0).trim());
-//                    //databaseUtilities.insertCountry(conn, worldList1.get(0),
-//                    //        countryCode);
-//                    String temp = worldList1.get(4);
-//                    long population = 0;
-//                    if (temp != null && !temp.equals("")) {
-//                        temp = temp.replace(",", "");
-//                        if (temp.contains("[")) {
-//                            temp = temp.substring(0, temp.indexOf("["));
-//                        }
-//                        population = Long.valueOf(temp);
-//                    }
-//                    databaseUtilities.updateWorldPopulation(conn, 
-//                            worldList1.get(0), population);
-//                }
-//            }
-//            conn.close();
-//        } catch(SQLException e) {
-//            System.out.println(e.getMessage());
-//        }

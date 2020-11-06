@@ -20,6 +20,13 @@ import org.json.simple.parser.JSONParser;
  * @author Gary Larson gary@thalic.mobi
  */
 public class JSONUtilities {
+    
+    /**
+     * Method to process a statistiques json file that is an array
+     * @param fileName to process
+     * @return a list of lists representation of the json file
+     * @throws Exception 
+     */
     public List<List<String>> processJsonArrayFile (String fileName) throws Exception {
         // parsing file "JSONExample.json" 
         
