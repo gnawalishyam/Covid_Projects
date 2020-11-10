@@ -41,11 +41,11 @@
         die("Could not connect");
     }
     // Build Queries
-    define ("WORLD_QUERY" , "SELECT total_cases, total_deaths, 
-                active_cases, total_date
+    define ("WORLD_QUERY" , "SELECT cases, deaths, 
+                active_cases, date
                 FROM latest_world_totals");
-    define ("TABLE_QUERY", "SELECT country, total_cases, total_deaths, 
-                active_cases, population, total_date, new_cases 
+    define ("TABLE_QUERY", "SELECT country, cases, deaths, 
+                active_cases, population, date, new_cases 
                 FROM main_table");
     // get results from world query
     $worldResult = pg_query($db_conn, WORLD_QUERY);
@@ -82,5 +82,6 @@
             "%" . "</td>";
     echo "</tr>";
   }
-
+  // close database connection
+  pg_close($db_conn);
 ?>
