@@ -22,6 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
     
     /**
      * function to Create Ranks of index
@@ -546,3 +547,4 @@
     $json = json_encode($jsonArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     /* Return the JSON string. */
     echo $json;
+

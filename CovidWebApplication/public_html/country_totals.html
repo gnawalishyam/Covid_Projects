@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!--
+/*
+ * The MIT License
+ *
+ * Copyright 2020 Gary Larson <gary@thalic.mobi>.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Country Totals</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <script src="js/jquery.js"></script>
+  <script src="js/popper-2.x.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script>
+    function loadTable(mydate) {
+        if (mydate === null) {
+            mydate = new Date();
+            mydate.setDate(mydate.getDate() - 1);
+            mydate = mydate.toISOString().substring(0, 10);
+        }
+        $.ajax(
+            'country_totals.php?date='.concat(mydate),
+            {
+                success: function(mydata) {
+                    $('#tableBody').html(mydata);
+                },
+                error: function() {
+                  alert('There was some error performing the AJAX call!');
+                }
+             }
+          );
+        
+      
+    }
+  </script>
+</head>
+<body onload="loadTable(null)">
+    <nav class="navbar navbar-expand-md navbar-dark sticky-top bg-dark">
+      <a class="navbar-brand" href="#">Real Deal Analytics</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarsExample04">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="#" >Country Totals<span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">JSON</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="country_codes.html">Country Codes</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="country_labels.html">Country Labels</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="country_populations.html">Country Populations</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <div class="container">
+        <h1>Country Totals Table </h1> 
+        <table class="table table-striped table-bordered">
+          <thead>
+              <tr>
+                <th>Country<br></th>
+                <th>Cases</th>
+                <th>Active Cases</th>
+                <th>Deaths</th>
+                <th>Recovered</th>
+                <th>Date</th>
+              </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
