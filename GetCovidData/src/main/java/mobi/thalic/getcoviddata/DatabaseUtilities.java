@@ -41,7 +41,7 @@ import java.util.Locale;
 public class DatabaseUtilities {
     // declare constants
     private final long DAY = 82800000l;
-    private final int UNKNOWN_COUNTRY_ID = 260;
+    private final int UNKNOWN_COUNTRY_ID = 261;
     private final SimpleDateFormat simpleDateFormat = 
             new SimpleDateFormat("yyyy-MM-dd");
     
@@ -88,7 +88,7 @@ public class DatabaseUtilities {
             throws SQLException {
         // Declare constant
         final String SELECT_POPULATION = 
-            "SELECT population FROM populations WHERE state_id = ?;";
+            "SELECT population FROM states WHERE id = ?;";
         // Declare variables
         long population = 0;
         //add state paramenter to statement
@@ -126,35 +126,24 @@ public class DatabaseUtilities {
      */
     public int selectStateId(Connection conn, String state) 
             throws SQLException {
-        // Declare constant
-        final String SELECT_STATE_ID = 
-            "SELECT id FROM states WHERE state = ?;";
-        // Declare variables
+        final String SELECT_STATE_ID_SQL = 
+                "SELECT id FROM states WHERE state = ?;";
         int stateId = 0;
-        // add state parameter
-        try ( 
-            // statement to use
-            PreparedStatement statement = 
-                    conn.prepareStatement(SELECT_STATE_ID)) {
-            // add state parameter
+        // run query and get results
+        try ( // statement to use
+            PreparedStatement statement = conn.prepareStatement(SELECT_STATE_ID_SQL)) {
+            // add state parameter to statement
             statement.setString(1, state);
-            // check if results
-            try ( 
-                // run query and get results
-                ResultSet resultSet = statement.executeQuery()) {
-                // check if results
+
+            try ( // run query and get results
+                    ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    // get state id from results
-                    stateId = resultSet.getInt(1);
-                } 
-                // close results
-                resultSet.close();
-                // close statement
-                statement.close();
+                    stateId = resultSet.getInt("id");
+                }
             }
+            statement.close();
         }
-        // return state id
-        return stateId;
+       return stateId; 
     }
     
     /**
@@ -169,7 +158,7 @@ public class DatabaseUtilities {
             throws SQLException, ParseException {
         // Declare constant
         final String INSERT_COUNTRY_TOTALS_SQL = "INSERT INTO country_totals" + 
-            " (country_id, cases, deaths, active_cases, date)" + 
+            " (country_id, cases, deaths, active, date)" + 
                 " VALUES (?, ?, ?, ?, ?);";
         // Declare variable
         String result = "";
@@ -183,7 +172,7 @@ public class DatabaseUtilities {
                         conn.prepareStatement(INSERT_COUNTRY_TOTALS_SQL)) {
                 // add country id parameter to statement
                 int countryId = selectCountryId(conn, lists.get(i).get(0));
-                if (countryId > 0) {
+                if (countryId > 0 && countryId != UNKNOWN_COUNTRY_ID) {
                     mCountryId = countryId;
                     statement.setInt(1, countryId);
                     // add total cases parameter to statement
@@ -223,11 +212,12 @@ public class DatabaseUtilities {
                 } else {
                     result += lists.get(i).get(0) + 
                             " does not exist in database";
+                    insertUnknownCountryTotal(conn, lists.get(i));
                 }
                 // close statement
                 statement.close();
                 if (mCountryId >0 && mDate != null) {
-                    insertCountryDaily(conn, mCountryId, mDate);
+                    result += insertCountryDaily(conn, mCountryId, mDate);
                 }
             }
         }
@@ -241,17 +231,18 @@ public class DatabaseUtilities {
      * @param date used
      * @throws SQLException if an error
      */
-    private void insertCountryDaily(Connection conn, int countryId, Date date) 
+    private String insertCountryDaily(Connection conn, int countryId, Date date) 
             throws SQLException {
         // Declare constant
         final String GET_COUNTRY_TOTAL_SQL = "SELECT cases, deaths, "
-                + "active_cases FROM country_totals WHERE date = ? "
+                + "active FROM country_totals WHERE date = ? "
                 + "AND country_id = ?";
         final String INSERT_COUNTRY_DAILY_SQL = "INSERT INTO country_dailies" + 
             " (country_id, cases, deaths, recovered, date)" + 
                 " VALUES (?, ?, ?, ?, ?);";
+        String result = "";
         if (countryId == 0 || date == null) {
-            return;
+            return "No countryId or date";
         }
         Date date1 = new Date(date.getTime() - DAY);
         long mCases = 0l, mCases1 = 0l, mDeaths = 0l, mDeaths1 = 0l, 
@@ -275,7 +266,7 @@ public class DatabaseUtilities {
                     // get deaths from results
                     mDeaths1 = resultSet1.getLong("deaths");
                     // get active cases from results
-                    mActive1 = resultSet1.getLong("active_cases");
+                    mActive1 = resultSet1.getLong("active");
                 } 
                 // close results
                 resultSet1.close();
@@ -302,7 +293,7 @@ public class DatabaseUtilities {
                     // get deaths from results
                     mDeaths = resultSet.getLong("deaths");
                     // get active cases from results
-                    mActive = resultSet.getLong("active_cases");
+                    mActive = resultSet.getLong("active");
                 } 
                 // close results
                 resultSet.close();
@@ -312,9 +303,8 @@ public class DatabaseUtilities {
         }
         // test current day results
         if (mCases == 0 && mDeaths == 0 && mActive == 0) {
-            String s = String.format("No record found for country id %d on %s", 
+            result = String.format("No record found for country id %d on %s", 
                     countryId, simpleDateFormat.format(date));
-            throw new SQLException(s);
         }
         // calculate and insert dialy data
         try ( 
@@ -350,6 +340,7 @@ public class DatabaseUtilities {
             // close statement
             statement2.close();
         }
+        return result;
     }
     
     /**
@@ -476,11 +467,11 @@ public class DatabaseUtilities {
             throws SQLException, ParseException {
         // Declare constant
         final String INSERT_US_TOTALS_SQL = "INSERT INTO state_totals" + 
-            " (state_id, cases, deaths, active_cases, date)" + 
+            " (state_id, cases, deaths, active, date)" + 
                 " VALUES (?, ?, ?, ?, ?);";
         // Declare variable
         String result = "";
-        int mStateId = 0;
+        int mStateId;
         Date mDate = null;
         // loop through list
         for (int i = 1; i < lists.size(); i++) {
@@ -491,8 +482,8 @@ public class DatabaseUtilities {
                             conn.prepareStatement(INSERT_US_TOTALS_SQL)) {
                     // add state id parameter to statement
                     int stateId = selectStateId(conn, lists.get(i).get(0));
+                    mStateId = stateId;
                     if (stateId > 0) {
-                        mStateId = stateId;
                         statement.setInt(1, stateId);
                         // add total cases parameter to statement
                         String tempString = lists.get(i).get(1);
@@ -531,16 +522,73 @@ public class DatabaseUtilities {
                     } else {
                         result += lists.get(i).get(0) + 
                                 " does not exist in database.\n";
+                        insertUnknownStateTotal(conn, lists.get(i));
                     }
                     // close statement
                     statement.close();
                     if (mStateId > 0 && mDate != null) {
-                        insertStateDaily(conn, mStateId, mDate);
+                        result += insertStateDaily(conn, mStateId, mDate);
                     }
                 }
             }
         }
         return result;
+    }
+    
+    /**
+     * Method to insert unknown state total
+     * @param conn to the database
+     * @param list of data to use
+     * @throws SQLException if a SQL error
+     * @throws ParseException if a parse error
+     */
+    public void insertUnknownStateTotal(Connection conn, List<String> list) 
+            throws SQLException, ParseException  {
+        // Declare constant
+        final String INSERT_UNKNOWN_STATE_TOTALS_SQL = "INSERT INTO "
+                + "unknown_state_totals (state, cases, deaths, active, "
+                + "date) VALUES (?, ?, ?, ?, ?);";
+        try ( 
+            // statenent to use
+            PreparedStatement statement = 
+                    conn.prepareStatement(INSERT_UNKNOWN_STATE_TOTALS_SQL)) {
+            // add state parameter to statement
+            statement.setString(1, list.get(0));
+            // add total cases parameter to statement
+            String tempString = list.get(1);
+            long tempLong = 0L;
+            if (!(tempString.equals("") || tempString.equals("N/A"))) {
+                tempString = tempString.replace(",", "");
+                tempLong = Long.parseLong(tempString);
+            }
+            statement.setLong(2, tempLong);
+            // add total deaths parameter to statement
+            tempString = list.get(2);
+            tempLong = 0L;
+            if (!(tempString.equals("") || tempString.equals("N/A"))) {
+                tempString = tempString.replace(",", "");
+                tempLong = Long.parseLong(tempString);
+            }
+            statement.setLong(3, tempLong);
+            // add active cases parameter to statement
+            tempString = list.get(3);
+            tempLong = 0L;
+            if (!(tempString.equals("") || tempString.equals("N/A"))) {
+                tempString = tempString.replace(",", "");
+                tempLong = Long.parseLong(tempString);
+            }
+            statement.setLong(4, tempLong);
+            // add total date parameter to statement
+            tempString = list.get(5);
+            SimpleDateFormat format = new 
+                SimpleDateFormat("yyyy_MM_dd", Locale.getDefault());
+            java.util.Date parsed = format.parse(tempString);
+            java.sql.Date tempDate = new java.sql.Date(parsed.getTime());
+            statement.setDate(5, tempDate);
+            // run query
+            statement.execute();
+            statement.close();
+        }
     }
     
     /**
@@ -550,17 +598,18 @@ public class DatabaseUtilities {
      * @param date used
      * @throws SQLException if an error
      */
-    private void insertStateDaily(Connection conn, int stateId, Date date) 
+    private String insertStateDaily(Connection conn, int stateId, Date date) 
             throws SQLException {
         // Declare constant
         final String GET_US_STATE_TOTAL_SQL = "SELECT cases, deaths, "
-                + "active_cases FROM state_totals WHERE date = ? "
+                + "active FROM state_totals WHERE date = ? "
                 + "AND state_id = ?";
         final String INSERT_US_STATE_DAILY_SQL = "INSERT INTO state_dailies" + 
             " (state_id, cases, deaths, recovered, date)" + 
                 " VALUES (?, ?, ?, ?, ?);";
+        String result = "";
         if (stateId == 0 || date == null) {
-            return;
+            return "no state id or date";
         }
         Date date1 = new Date(date.getTime() - DAY);
         long mCases = 0l, mCases1 = 0l, mDeaths = 0l, mDeaths1 = 0l, 
@@ -584,7 +633,7 @@ public class DatabaseUtilities {
                     // get deaths from results
                     mDeaths1 = resultSet1.getLong("deaths");
                     // get active cases from results
-                    mActive1 = resultSet1.getLong("active_cases");
+                    mActive1 = resultSet1.getLong("active");
                 } 
                 // close results
                 resultSet1.close();
@@ -611,7 +660,7 @@ public class DatabaseUtilities {
                     // get deaths from results
                     mDeaths = resultSet.getLong("deaths");
                     // get active cases from results
-                    mActive = resultSet.getLong("active_cases");
+                    mActive = resultSet.getLong("active");
                 } 
                 // close results
                 resultSet.close();
@@ -621,9 +670,8 @@ public class DatabaseUtilities {
         }
         // test current day results
         if (mCases == 0 && mDeaths == 0 && mActive == 0) {
-            String s = String.format("No record found for state id %d on %s", 
+            result = String.format("No record found for state id %d on %s", 
                     stateId, simpleDateFormat.format(date));
-            throw new SQLException(s);
         }
         // calculate and insert dialy data
         try ( 
@@ -659,6 +707,7 @@ public class DatabaseUtilities {
             // close statement
             statement2.close();
         }
+        return result;
     }
     
     /**
@@ -672,7 +721,7 @@ public class DatabaseUtilities {
             long population) throws SQLException {
         // declare constant
         final String UPDATE_POPULATION_SQL = 
-            "UPDATE populations SET population = ? WHERE state_id = ?;";
+            "UPDATE states SET population = ? WHERE id = ?;";
         // add state parameter
         try ( 
             // statement to use
@@ -700,7 +749,7 @@ public class DatabaseUtilities {
             long population) throws SQLException {
         // declare constant
         final String UPDATE_POPULATION_SQL = 
-            "UPDATE populations SET population = ? WHERE country_id = ?;";
+            "UPDATE country_codes SET population = ? WHERE id = ?;";
         // add country parameter
         try ( 
             // statement to use
@@ -728,7 +777,7 @@ public class DatabaseUtilities {
             throws SQLException {
         // Declare constant
         final String SELECT_POPULATION = 
-            "SELECT population FROM populations WHERE country_id = ?;";
+            "SELECT population FROM country_codes WHERE id = ?;";
         // Declare variables
         long population = 0;
         //add state paramenter to statement
@@ -762,20 +811,24 @@ public class DatabaseUtilities {
      * @param conn to the database
      * @param state to enter
      * @param population to enter
-     * @throws SQLException 
+     * @throws SQLException if an error
      */
     public void insertStatePopulation(Connection conn, String state, 
             long population) throws SQLException {
         // declare constant
         final String INSERT_POPULATION_SQL = 
-            "INSERT INTO populations (state_id, population) VALUES (?, ?);";
+            "INSERT INTO states (state, population) VALUES (?, ?);";
+        if (selectStateId(conn, state) > 0) {
+            updateStatePopulation(conn, state, population);
+            return;
+        }
         // add state parameter
         try ( 
             // statement to use
             PreparedStatement statement = 
                     conn.prepareStatement(INSERT_POPULATION_SQL)) {
             // add state parameter
-            statement.setInt(1, selectStateId(conn, state));
+            statement.setString(1, state);
             //add population parameter
             statement.setLong(2, population);
             // run statement
@@ -794,21 +847,61 @@ public class DatabaseUtilities {
      */
     public void insertWorldPopulation(Connection conn, String country, 
             long population) throws SQLException {
-        // declare constant
-        final String INSERT_POPULATION_SQL = 
-            "INSERT INTO populations (country_id, population) VALUES (?, ?);";
-        // add state parameter
+        updateWorldPopulation(conn, country, population);
+    }
+    
+    /**
+     * Method to insert unknown country total
+     * @param conn to the database
+     * @param list of data to use
+     * @throws SQLException if a SQL error
+     * @throws ParseException if a parse error
+     */
+    public void insertUnknownCountryTotal(Connection conn, List<String> list) 
+            throws SQLException, ParseException  {
+        // Declare constant
+        final String INSERT_UNKNOWN_COUNTRY_TOTALS_SQL = "INSERT INTO "
+                + "unknown_country_totals (country, cases, deaths, active, "
+                + "date) VALUES (?, ?, ?, ?, ?);";
         try ( 
-            // statement to use
+            // statenent to use
             PreparedStatement statement = 
-                    conn.prepareStatement(INSERT_POPULATION_SQL)) {
-            // add state parameter
-            statement.setInt(1, selectCountryId(conn, country));
-            //add population parameter
-            statement.setLong(2, population);
-            // run statement
+                    conn.prepareStatement(INSERT_UNKNOWN_COUNTRY_TOTALS_SQL)) {
+            // add country parameter to statement 
+            statement.setString(1, list.get(0));
+            // add cases parameter to statement
+            String tempString = list.get(1);
+            long tempLong = 0L;
+            if (!(tempString.equals("") || tempString.equals("N/A"))) {
+                tempString = tempString.replace(",", "");
+                tempLong = Long.parseLong(tempString);
+            }
+            statement.setLong(2, tempLong);
+            // add deaths parameter to statement
+            tempString = list.get(2);
+            tempLong = 0L;
+            if (!(tempString.equals("") || tempString.equals("N/A"))) {
+                tempString = tempString.replace(",", "");
+                tempLong = Long.parseLong(tempString);
+            }
+            statement.setLong(3, tempLong);
+            // add active cases parameter to statement
+            tempString = list.get(3);
+            tempLong = 0L;
+            if (!(tempString.equals("") || tempString.equals("N/A"))) {
+                tempString = tempString.replace(",", "");
+                tempLong = Long.parseLong(tempString);
+            }
+            statement.setLong(4, tempLong);
+            // add date parameter to statement
+            tempString = list.get(5);
+            SimpleDateFormat format = new 
+                SimpleDateFormat("yyyy_MM_dd", Locale.getDefault());
+            java.util.Date parsed = format.parse(tempString);
+            java.sql.Date tempDate = new java.sql.Date(parsed.getTime());
+            statement.setDate(5, tempDate);
+            // run query
             statement.execute();
-            //clase statement
             statement.close();
         }
     }

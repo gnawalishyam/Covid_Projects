@@ -34,7 +34,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Class that deals with Covid data
@@ -45,6 +44,11 @@ public class CovidData {
     private final String YESTERDAY = getYesterdaysDate();
     // Declare configuration options
     private final HashMap<String, String> configMap = new HashMap<>();
+    private final DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+    
+    /**
+     * Default constructor
+     */
     public CovidData () {
         getConfigParams();
     }
@@ -84,25 +88,7 @@ public class CovidData {
         }
     }
     
-    public String testDatabase(){
-        // Declare variables
-        String results;
-        DatabaseUtilities database = new DatabaseUtilities();
-        try (
-            Connection conn = 
-                database.connect(configMap.get("DB_CONNECTION"), 
-                configMap.get("DB_USER_NAME"), 
-                configMap.get("DB_USER_PASSWORD"));) {
-            long population = database.selectStatePopulation(conn, 
-                                    "USA Total");
-            results = String.format(Locale.getDefault(), 
-                    "USA Total population = %,d", population);
-            database.closeConnection(conn);
-        } catch (SQLException ex) {
-            return ex.getMessage();
-        }
-        return results;
-    }
+    
     
     /**
      * Method to process world-o-meter scrape to enter data into a database
@@ -110,19 +96,29 @@ public class CovidData {
      */
     public String processWorldometerScrape(){
         // declare and initialize variable
-        String result = "United States Results";
-        result += "\n" + processUnitedStatesScrape();
-        result += "\n World Results";
-        result += "\n" + processWorldScrape();
-        //result += "\n" + backupDatabase();
+        String result;
+        Connection conn = getDatabaseConnection();
+        if (conn == null) {
+            return "No connection to the database was established!";
+        }
+        result = "United States Results";
+        result += "\n" + processUnitedStatesScrape(conn);
+        result += "\n\n\n World Results";
+        result += "\n" + processWorldScrape(conn);
+        try {
+            databaseUtilities.closeConnection(conn);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
         return result;
     }
     
     /**
      * Method to scrape and process United States data
+     * @param conn to database
      * @return results of WorldOMeter scrapes
      */
-    private String processUnitedStatesScrape () {
+    private String processUnitedStatesScrape (Connection conn) {
         // Declare constants
         final String WORLDOMETER_US = 
                 "https://www.worldometers.info/coronavirus/country/us/";
@@ -138,11 +134,12 @@ public class CovidData {
         // process united states covid data and put in csv file
         if (unitedStatesStrings != null) {
             // modify raw US strings and add population
-            unitedStatesStrings = createUnitedStatesStrings(unitedStatesStrings);
+            unitedStatesStrings = createUnitedStatesStrings(conn, 
+                    unitedStatesStrings);
             // add date
             unitedStatesStrings = addYesterday(unitedStatesStrings);
             // write to database
-            String tempResult = writeUSToDatabase(unitedStatesStrings);
+            String tempResult = writeUSToDatabase(conn, unitedStatesStrings);
             result = tempResult + "\n" + 
                     "Successfully acquired United States covid data";
         }
@@ -152,9 +149,10 @@ public class CovidData {
     
     /**
      * Method to scrape and process World data
+     * @param conn to database
      * @return results
      */
-    private String processWorldScrape() {
+    private String processWorldScrape(Connection conn) {
         // Declare constants
         final String WORLDOMETER_ALL = 
                 "https://www.worldometers.info/coronavirus/";
@@ -169,11 +167,11 @@ public class CovidData {
         // process world covid data and put in csv file
         if (worldStrings != null) {
             // modify raw world covid data
-            worldStrings = createWorldStrings(worldStrings);
+            worldStrings = createWorldStrings(conn, worldStrings);
             // add date
             worldStrings = addYesterday(worldStrings);
             // write to database
-            String tempResult = writeWorldToDatabase(worldStrings);
+            String tempResult = writeWorldToDatabase(conn, worldStrings);
             result = tempResult + "\n" + 
                     "Successfully acquired world covid data";
         }
@@ -183,10 +181,12 @@ public class CovidData {
     
     /**
      * Method to remove unwanted columns
+     * @param conn to database
      * @param lists to modify
      * @return modified lists
      */
-    private List<List<String>> createWorldStrings(List<List<String>> lists) {
+    private List<List<String>> createWorldStrings(Connection conn, 
+            List<List<String>> lists) {
         // Declare variables
         List<List<String>> newLists = new ArrayList<>();
         // loop through lists putting only what is required in new lists
@@ -208,17 +208,18 @@ public class CovidData {
                 newLists.add(strings);
             }
         });
-        updatePopulation("World", newLists);
+        updatePopulation(conn, "World", newLists);
         return newLists;
     }
 
     /**
      * Method to remove unwanted columns
+     * @param conn to database
      * @param lists to modify
-     * @param map with state populations
      * @return modified lists
      */
-    private List<List<String>> createUnitedStatesStrings(List<List<String>> lists) {
+    private List<List<String>> createUnitedStatesStrings(Connection conn, 
+            List<List<String>> lists) {
         // Declare variables
         List<List<String>> newLists = new ArrayList<>();
         // initialize counter for total population
@@ -244,36 +245,29 @@ public class CovidData {
                 newLists.add(strings);
             }
         } 
-        updatePopulation("UnitedStates", newLists);
+        updatePopulation(conn, "UnitedStates", newLists);
         return newLists;
     }
     
     /**
      * Method to update population
+     * @param conn to the database
      * @param country either World or UnitedStates
      * @param lists to update
      */
-    private void updatePopulation(String country, List<List<String>> lists) {
-        // initialize database variable
-        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
+    private void updatePopulation(Connection conn, String country, 
+            List<List<String>> lists) {
         long adjustment;
         try {
-            // open connection to database
-            Connection conn = 
-                databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
-                configMap.get("DB_USER_NAME"), 
-                configMap.get("DB_USER_PASSWORD"));
             for (int i = 1; i < lists.size(); i++) {
                 long population = convertPopulation(lists.get(i).get(4));
                 String place = lists.get(i).get(0);
                 if (country.equals("UnitedStates")) {
                     long statePopulation = databaseUtilities
                             .selectStatePopulation(conn, place);
-                    if (statePopulation == 0 && population != 0) {
-                        if (databaseUtilities.selectStateId(conn, place) != 0) {
-                            databaseUtilities.insertStatePopulation(conn, 
-                                    place, population);
-                        }
+                    if (statePopulation == 0) {
+                        databaseUtilities.insertStatePopulation(conn, 
+                                place, population);
                     } else {
                     adjustment = statePopulation / 10;
                         if (statePopulation > population - adjustment && 
@@ -356,23 +350,16 @@ public class CovidData {
     
     /**
      * Method to write US totals to the database
+     * @param conn to the database
      * @param lists of data to process
      * @return results
      */
-    private String writeUSToDatabase(List<List<String>> lists) {
+    private String writeUSToDatabase(Connection conn, 
+            List<List<String>> lists) {
         String result;
-        // initialize database variable
-        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
-            // open connection to database
-            Connection conn = 
-                    databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
-                    configMap.get("DB_USER_NAME"), 
-                    configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
             result = databaseUtilities.insertUSTotals(conn, lists);
-            // close database connection
-            databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
             // output SQL exception messages
             result = e.getMessage() + "\n";
@@ -397,27 +384,48 @@ public class CovidData {
     
     /**
      * Method to write World totals to the database
+     * @param conn to the database
      * @param lists of data to process
      */
-    private String writeWorldToDatabase(List<List<String>> lists) {
+    private String writeWorldToDatabase(Connection conn, 
+            List<List<String>> lists) {
         // initialize variable
         String result;
-        // initialize database variable
-        DatabaseUtilities databaseUtilities = new DatabaseUtilities();
         try {
-            // open connection to database
-            Connection conn = 
-                    databaseUtilities.connect(configMap.get("DB_CONNECTION"), 
-                    configMap.get("DB_USER_NAME"), 
-                    configMap.get("DB_USER_PASSWORD"));
             // insert data in total table in database
             result = databaseUtilities.insertWorldTotals(conn, lists);   
-            // close database connection
-            databaseUtilities.closeConnection(conn);
         } catch (SQLException | ParseException e) {
             // output SQL exception messages 
             result = e.getMessage();
         }
         return result;
+    }
+    
+    /**
+     * Method to get database connection
+     * @return database connection
+     */
+    private Connection getDatabaseConnection() {
+        // declare and initialize variable
+        Connection conn = null;
+        int i = 0;
+        String error = "";
+        do {
+            // open connection to database
+            try {
+                conn = 
+                    databaseUtilities.connect(configMap.get("MYSQL_CONNECTION"),
+                    configMap.get("DB_USER_NAME"), 
+                    configMap.get("DB_USER_PASSWORD"));
+            } catch (SQLException e) {
+                error += e.getMessage() + "\n";
+            } finally {
+                i++;
+            }
+        } while(conn == null && i < 10);
+        if (conn == null) {
+            System.out.println(error);
+        }
+        return conn;
     }
 }

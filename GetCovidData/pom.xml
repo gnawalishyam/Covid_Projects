@@ -12,9 +12,9 @@
             <version>1.13.1</version>
         </dependency>
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.2.14.jre7</version>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.22</version>
         </dependency>
     </dependencies>
     <properties>
