@@ -24,40 +24,44 @@
  */
 
     
-    // load information from configuration file
-    function loadConfig( $vars = array() ) {
-        foreach( $vars as $v ) {
-            define( $v, get_cfg_var( "covid.cfg.$v" ) );
-        }
-    }
-
-    // Then call :
-    $constantNames = array( 'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS');
-    loadConfig( $constantNames );
-    $connString = sprintf("host=%s dbname=%s user=%s password=%s", 
-            DB_HOST, DB_NAME, DB_USER, DB_PASS);
     // open connection to database
-    $db_conn = pg_connect($connString);
-    if (!$db_conn) {
-        die("Could not connect");
+    $servername = "52d9225.online-server.cloud";
+    $username = "web_php";
+    $password = 'nz3Rp"3XZL=2v4.Q';
+    $database = "covid";
+
+    try {
+        // open connection to database
+        $db_conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
+        // set the PDO error mode to exception
+        $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        if (!$db_conn) {
+            die("Could not connect");
+        }
+        define ("TABLE_QUERY", "SELECT country, label
+                    FROM country_labels INNER JOIN country_codes 
+                    ON country_labels.country_id = country_codes.id
+                    WHERE country_codes.alpha_2 NOT IN ('R', 'S')
+                    ORDER BY country");
+        // create statement
+        $stmt = $db_conn->prepare(TABLE_QUERY);
+        // get results from table query
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        if (!$stmt) {
+            die("No Table Results");
+        }
+        // Build table body
+        while ($row = $stmt->fetch()) {
+          echo "<tr>";
+          echo "<td>" . $row["country"] . "</td>";
+          echo "<td>" . $row["label"] . "</td>";
+          echo "</tr>";
+        }
+        // close database connection
+        $db_conn = null;
+    } catch(PDOException $e) {
+        echo "Connection failed: " . $e->getMessage();
     }
-    define ("TABLE_QUERY", "SELECT country, label
-                FROM country_labels INNER JOIN country_codes 
-                ON country_labels.country_id = country_codes.id
-                WHERE country_codes.alpha_2 NOT IN ('R', 'S')
-                ORDER BY country");
-    // get results from table query
-    $tableResult = pg_query($db_conn, TABLE_QUERY);
-    if (!$tableResult) {
-        die("No Table Results");
-    }
-  // Build table body
-  while ($row = pg_fetch_row($tableResult)) {
-    echo "<tr>";
-    echo "<td>" . $row[0] . "</td>";
-    echo "<td>" . $row[1] . "</td>";
-    echo "</tr>";
-  }
-  // close database connection
-  pg_close($db_conn);
 

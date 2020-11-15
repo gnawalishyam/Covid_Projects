@@ -176,10 +176,10 @@
      * @return array of population 10k world data
      */
     function createWorld10k($worldRow) : array {
-        $world10k["cases"] = $worldRow[0] / $worldRow[4] * 10000;
-        $world10k["deaths"] = $worldRow[1] / $worldRow[4] * 10000;
-        $world10k["active_cases"] = $worldRow[2] / $worldRow[4] * 10000;
-        $world10k["recovered"] = $worldRow[3] / $worldRow[4] * 10000;
+        $world10k["cases"] = $worldRow["cases"] / $worldRow["population"] * 10000;
+        $world10k["deaths"] = $worldRow["deaths"] / $worldRow["population"] * 10000;
+        $world10k["active"] = $worldRow["cases"] / $worldRow["population"] * 10000;
+        $world10k["recovered"] = $worldRow["recovered"] / $worldRow["population"] * 10000;
         return $world10k;
     }
     
@@ -284,20 +284,23 @@
     }
 
     // create connection string
-    $connString = sprintf("host=%s dbname=%s user=%s password=%s", 
-            '52d9225.online-server.cloud', 'covid', 'web_php', 
-            'nz3Rp"3XZL=2v4.Q');
-    // open connection to database
-    $db_conn = pg_connect($connString);
-    if (!$db_conn) {
-        die("Could not connect");
-    }
+    $servername = "52d9225.online-server.cloud";
+    $username = "web_php";
+    $password = 'nz3Rp"3XZL=2v4.Q';
+    $database = "covid";
+
+    try {
+        // open connection to database
+      $db_conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
+      // set the PDO error mode to exception
+      $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
    
     /**
      * Query to retrieve the world data from the database for computations
      */
     define ("WORLD_QUERY" , "SELECT cases, deaths, 
-                active_cases, recovered, population, date, mortality
+                active, recovered, population, date, mortality
                 FROM latest_world_totals");
     /**
      * Query to retrieve case data from the database
@@ -311,7 +314,7 @@
      * Query to retrieve active cases data from the database
      */
     define ("ACTIVE_QUERY", 
-            "SELECT country, active_cases FROM latest_country_active_cases");
+            "SELECT country, active FROM latest_country_active");
     /**
      * Query to retrieve recovered data from the database
      */
@@ -331,7 +334,7 @@
      * Query to retrieve active cases data for population 10k from the database
      */
     define ("ACTIVE10K_QUERY", 
-            "SELECT country, active_cases FROM latest_country_active_cases10k");
+            "SELECT country, active FROM latest_country_active10k");
     /**
      * Query to retrieve recovered data for population 10k from the database
      */
@@ -347,89 +350,110 @@
      */
     define("MORTALITY_QUERY", 
             "SELECT country, mortality FROM latest_country_mortality");
-    // set encoding 
-    //pg_set_client_encoding($conn, "UTF8");
+    
     // get results from world query
-    $worldResult = pg_query($db_conn, WORLD_QUERY);
-    if (!$worldResult) {
+    $stmt = $db_conn->prepare(WORLD_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $worldRow = $stmt->fetch();
+    if (!$worldRow) {
         die("No World Results");
     }
     // get results from the case query
-    $caseResult = pg_query($db_conn, CASE_QUERY);
-    if (!$caseResult) {
+    $stmt = $db_conn->prepare(CASE_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $caseRows = $stmt->fetchAll();
+    if (!$caseRows) {
         die("No Case Results");
     }
     // get results from the death query
-    $deathResult = pg_query($db_conn, DEATH_QUERY);
-    if (!$deathResult) {
+    $stmt = $db_conn->prepare(DEATH_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $deathRows = $stmt->fetchAll();
+    if (!$deathRows) {
         die("No Death Results");
     }
     // get results from the active query
-    $activeResult = pg_query($db_conn, ACTIVE_QUERY);
-    if (!$activeResult) {
+    $stmt = $db_conn->prepare(ACTIVE_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $activeRows = $stmt->fetchAll();
+    if (!$activeRows) {
         die("No Active Case Results");
     }
     // get results from the recovered query
-    $recoveredResult = pg_query($db_conn, RECOVERED_QUERY);
-    if (!$recoveredResult) {
+    $stmt = $db_conn->prepare(RECOVERED_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $recoveredRows = $stmt->fetchAll();
+    if (!$recoveredRows) {
         die("No Recovered Results");
     }
     // get results from the case10k query
-    $case10kResult = pg_query($db_conn, CASE10K_QUERY);
-    if (!$case10kResult) {
+    $stmt = $db_conn->prepare(CASE10K_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $case10kRows = $stmt->fetchAll();
+    if (!$case10kRows) {
         die("No Case10k Results");
     }
     // get results from the death10k query
-    $death10kResult = pg_query($db_conn, DEATH10K_QUERY);
-    if (!$death10kResult) {
+    $stmt = $db_conn->prepare(DEATH10K_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $death10kRows = $stmt->fetchAll();
+    if (!$death10kRows) {
         die("No Death10k Results");
     }
     // get results from the active10k query
-    $active10kResult = pg_query($db_conn, ACTIVE10K_QUERY);
-    if (!$active10kResult) {
+    $stmt = $db_conn->prepare(ACTIVE10K_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $active10kRows = $stmt->fetchAll();
+    if (!$active10kRows) {
         die("No Active10k Case Results");
     }
     // get results from the recovered10k query
-    $recovered10kResult = pg_query($db_conn, RECOVERED10K_QUERY);
-    if (!$recovered10kResult) {
+    $stmt = $db_conn->prepare(RECOVERED10K_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $recovered10kRows = $stmt->fetchAll();
+    if (!$recovered10kRows) {
         die("No Recovered10k Results");
     }
     // get results from the mortality query
-    $mortalityResult = pg_query($db_conn, MORTALITY_QUERY);
-    if (!$mortalityResult) {
+    $stmt = $db_conn->prepare(MORTALITY_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $mortalityRows = $stmt->fetchAll();
+    if (!$mortalityRows) {
         die("No Mortality Results");
     }
     // get results from the population query
-    $populationResult = pg_query($db_conn, POPULATION_QUERY);
-    if (!$populationResult) {
+    $stmt = $db_conn->prepare(POPULATION_QUERY);
+    $stmt->execute();
+    // set the resulting array to associative
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $populationRows = $stmt->fetchAll();
+    if (!$populationRows) {
         die("No Population Results");
     }
-    // set JSON header
-    header('Content-Type: application/json');
-    // get world row
-    $worldRow = pg_fetch_row($worldResult);
-    // get case rows
-    $caseRows = pg_fetch_all($caseResult);
-    // get death rows
-    $deathRows = pg_fetch_all($deathResult);
-    // get active rows
-    $activeRows = pg_fetch_all($activeResult);
-    // get recovered rows
-    $recoveredRows = pg_fetch_all($recoveredResult);
-    // get case10k rows
-    $case10kRows = pg_fetch_all($case10kResult);
-    // get death10k rows
-    $death10kRows = pg_fetch_all($death10kResult);
-    // get active10k rows
-    $active10kRows = pg_fetch_all($active10kResult);
-    // get recovered10k rows
-    $recovered10kRows = pg_fetch_all($recovered10kResult);
-    // get mortality rows
-    $mortalityRows = pg_fetch_all($mortalityResult);
-    // get population rows
-    $populationRows = pg_fetch_all($populationResult);
+        // set JSON header
+        header('Content-Type: application/json');
     // close database connection
-    pg_close($db_conn);
+    $db_conn = null;
     // create population associative array
     $populations = convertRows($populationRows, "population");
     // create ranks for populations
@@ -441,7 +465,7 @@
     // create case associative array
     $cases = convertRows($caseRows, "cases");
     // create active case associative array
-    $actives = convertRows($activeRows, "active_cases");
+    $actives = convertRows($activeRows, "active");
     // create recovered associative array
     $recoveries = convertRows($recoveredRows, "recovered");
     // convert world values to 10k population
@@ -461,10 +485,10 @@
     // create death 10k ranks
     $death10kRank = createRanks($death10kRows);
     // create active case ranks
-    $activeRank = createRanksAsc($active10kRows, "active_cases");
+    $activeRank = createRanksAsc($active10kRows, "active");
     $activeRanks = assignRanks($activeRank);
     // create active 10k associative array
-    $active10k = convertRows($active10kRows, "active_cases");
+    $active10k = convertRows($active10kRows, "active");
     // create active 10k ranks
     $active10kRank = createRanks($active10kRows);
     // create recovered case ranks
@@ -479,24 +503,26 @@
         // set country
         $country = $populationRows[$i]["country"];
         $jsonEntry["country"] = $country;
-        // set percent of world mortality
-        $jsonEntry["pcOfWorldMortality"] = ($mortalities[$country] * 
-                ($cases[$country] / $worldRow[0])) / $worldRow[6] * 100;
         // set percent of world population
         $jsonEntry["pcOfWorldPopulation"] = $populationRows[$i]["population"] / 
-                $worldRow[4] *100;
+                $worldRow["population"] *100;
+        // set percent of world mortality
+        $jsonEntry["pcOfWorldMortality"] = ($mortalities[$country] * 
+                ($cases[$country] / $populationRows[$i]["population"])) / 
+                ($worldRow["mortality"]) 
+                * 100;
         // set percent of world deaths
         $jsonEntry["pcOfWorldDeaths"] = $deaths[$country] / 
-                $worldRow[1] * 100;
+                $worldRow["deaths"] * 100;
         // set percent of world active cases
         $jsonEntry["pcOfActiveCases"] = $actives[$country] / 
-                $worldRow[2] * 100;
+                $worldRow["active"] * 100;
         // set persent of world recovered
         $jsonEntry["pcOfRecovered"] = $recoveries[$country] / 
-                $worldRow[3] * 100;
+                $worldRow["recovered"] * 100;
         // set percent of world cases
         $jsonEntry["pcOfTotalCases"] = $cases[$country] / 
-                $worldRow[0] * 100;
+                $worldRow["cases"] * 100;
         // set population
         $jsonEntry["population"] = $populations[$country];
         // set population world rank
@@ -541,8 +567,10 @@
         // add entry to array
         $jsonArray[$i] = $jsonEntry;
     }
-    
-    // encode json array
-    $json = json_encode($jsonArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    /* Return the JSON string. */
-    echo $json;
+        // encode json array
+        $json = json_encode($jsonArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        /* Return the JSON string. */
+        echo $json;
+    } catch(PDOException $e) {
+      echo "Connection failed: " . $e->getMessage();
+    }

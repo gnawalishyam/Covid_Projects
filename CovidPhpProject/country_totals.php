@@ -28,47 +28,56 @@
     if ($date == null) {
         die("No date parameter");
     }
-    // load information from configuration file
-    function loadConfig( $vars = array() ) {
-        foreach( $vars as $v ) {
-            define( $v, get_cfg_var( "covid.cfg.$v" ) );
-        }
-    }
+    
+    // create connection string
+    $servername = "52d9225.online-server.cloud";
+    $username = "web_php";
+    $password = 'nz3Rp"3XZL=2v4.Q';
+    $database = "covid";
 
-    // Then call :
-    $constantNames = array( 'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS');
-    loadConfig( $constantNames );
-    $connString = sprintf("host=%s dbname=%s user=%s password=%s", 
-            DB_HOST, DB_NAME, DB_USER, DB_PASS);
-    // open connection to database
-    $db_conn = pg_connect($connString);
-    if (!$db_conn) {
-        die("Could not connect");
+    try {
+        // open connection to database
+        $db_conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
+        // set the PDO error mode to exception
+        $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   
+        if (!$db_conn) {
+            die("Could not connect");
+        }
+        define ("TABLE_QUERY", "SELECT display, cases, active, deaths,
+                    cases - active - deaths AS recovered
+                    FROM country_totals 
+                    INNER JOIN country_codes 
+                    ON country_totals.country_id = country_codes.id
+                    WHERE date = :dateParam AND country_codes.alpha_2 NOT IN ('R', 'S')
+                    ORDER BY display");
+        // set params
+        
+        $params = [$date];
+        echo $date;
+        // get results from the table query
+        $stmt = $db_conn->prepare(TABLE_QUERY);
+        // add parameter
+        $stmt->bindParam(':dateParam', $date);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        if (!$stmt) {
+            die("No Table Results");
+        }
+      // Build table body
+      while ($row = $stmt->fetch()) {
+        echo "<tr>";
+        echo "<td>" . $row["display"] . "</td>";
+        echo "<td>" . number_format(intval($row["cases"])) . "</td>";
+        echo "<td>" . number_format(intval($row["active"])) . "</td>";
+        echo "<td>" . number_format(intval($row["deaths"])) . "</td>"; 
+        echo "<td>" . number_format(intval($row["recovered"])) . "</td>";
+        echo "<td>" . $date . "</td>";
+        echo "</tr>";
+      }
+      // close database connection
+      $db_conn = null;
+    } catch(PDOException $e) {
+      echo "Connection failed: " . $e->getMessage();
     }
-    define ("TABLE_QUERY", "SELECT country_display, cases, active_cases, deaths,
-                cases - active_cases - deaths AS recovered
-                FROM country_totals 
-                INNER JOIN country_codes 
-                ON country_totals.country_id = country_codes.id
-                WHERE date = $1 AND country_codes.alpha_2 NOT IN ('R', 'S')
-                ORDER BY country_display");
-    // set params
-    $params = [$date];
-    // get results from table query
-    $tableResult = pg_query_params($db_conn, TABLE_QUERY, $params);
-    if (!$tableResult) {
-        die("No Table Results");
-    }
-  // Build table body
-  while ($row = pg_fetch_row($tableResult)) {
-    echo "<tr>";
-    echo "<td>" . $row[0] . "</td>";
-    echo "<td>" . number_format(intval($row[1])) . "</td>";
-    echo "<td>" . number_format(intval($row[2])) . "</td>";
-    echo "<td>" . number_format(intval($row[3])) . "</td>"; 
-    echo "<td>" . number_format(intval($row[4])) . "</td>";
-    echo "<td>" . $date . "</td>";
-    echo "</tr>";
-  }
-  // close database connection
-  pg_close($db_conn);

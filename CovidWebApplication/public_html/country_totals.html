@@ -38,7 +38,7 @@
     function loadTable(mydate) {
         if (mydate === null) {
             mydate = new Date();
-            mydate.setDate(mydate.getDate() - 1);
+            mydate.setDate(mydate.getDate() - 2);
             mydate = mydate.toISOString().substring(0, 10);
         }
         $.ajax(
@@ -77,9 +77,6 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="country_labels.html">Country Labels</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="country_populations.html">Country Populations</a>
           </li>
         </ul>
       </div>
