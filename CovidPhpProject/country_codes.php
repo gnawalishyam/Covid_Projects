@@ -24,14 +24,14 @@
  */
 
     // open connection to database
-    $servername = "52d9225.online-server.cloud";
+    $servername = "550dae4.online-server.cloud";
     $username = "web_php";
     $password = 'nz3Rp"3XZL=2v4.Q';
     $database = "covid";
 
     try {
         // open connection to database
-        $db_conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
+        $db_conn = new PDO("mysql:host=$servername;dbname=$database;charset=utf8", $username, $password);
         // set the PDO error mode to exception
         $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
    

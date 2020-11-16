@@ -414,7 +414,7 @@ public class CovidData {
             // open connection to database
             try {
                 conn = 
-                    databaseUtilities.connect(configMap.get("MYSQL_CONNECTION"),
+                    databaseUtilities.connect(configMap.get("DB_CONNECT"),
                     configMap.get("DB_USER_NAME"), 
                     configMap.get("DB_USER_PASSWORD"));
             } catch (SQLException e) {

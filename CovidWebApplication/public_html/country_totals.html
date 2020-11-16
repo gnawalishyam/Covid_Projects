@@ -36,13 +36,8 @@
   <script src="js/bootstrap.js"></script>
   <script>
     function loadTable(mydate) {
-        if (mydate === null) {
-            mydate = new Date();
-            mydate.setDate(mydate.getDate() - 2);
-            mydate = mydate.toISOString().substring(0, 10);
-        }
         $.ajax(
-            'country_totals.php?date='.concat(mydate),
+            'country_totals.php',
             {
                 success: function(mydata) {
                     $('#tableBody').html(mydata);

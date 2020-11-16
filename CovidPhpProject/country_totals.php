@@ -23,27 +23,37 @@
  * THE SOFTWARE.
  */
 
-    // get date entered
-    $date = filter_input(INPUT_GET, 'date', FILTER_SANITIZE_URL);
-    if ($date == null) {
-        die("No date parameter");
-    }
-    
     // create connection string
-    $servername = "52d9225.online-server.cloud";
+    $servername = "550dae4.online-server.cloud";
     $username = "web_php";
     $password = 'nz3Rp"3XZL=2v4.Q';
     $database = "covid";
 
     try {
         // open connection to database
-        $db_conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
+        $db_conn = new PDO("mysql:host=$servername;dbname=$database;charset=utf8", $username, $password);
         // set the PDO error mode to exception
         $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
    
         if (!$db_conn) {
             die("Could not connect");
         }
+        
+        define ("DATE_QUERY", "SELECT MAX(`date`) AS mdate FROM country_totals");
+        
+        // get results from the date query
+        $stmt = $db_conn->prepare(DATE_QUERY);
+        $stmt->execute();
+        // set the results to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        if(!$stmt) {
+            die("No Date Results");
+        }
+        // get result
+        $row = $stmt->fetch();
+        // get date
+        $date = $row["mdate"];
+        
         define ("TABLE_QUERY", "SELECT display, cases, active, deaths,
                     cases - active - deaths AS recovered
                     FROM country_totals 
@@ -51,10 +61,7 @@
                     ON country_totals.country_id = country_codes.id
                     WHERE date = :dateParam AND country_codes.alpha_2 NOT IN ('R', 'S')
                     ORDER BY display");
-        // set params
         
-        $params = [$date];
-        echo $date;
         // get results from the table query
         $stmt = $db_conn->prepare(TABLE_QUERY);
         // add parameter

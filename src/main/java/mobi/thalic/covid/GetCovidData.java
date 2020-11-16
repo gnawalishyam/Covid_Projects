@@ -19,10 +19,12 @@ public class GetCovidData {
     public static void main(String[] args)  {
         
 
-        CovidData covidData = new CovidData();   
+        //CovidData covidData = new CovidData();   
         //String result = covidData.createStateDailies();
         //String result = covidData.createCountryDailies();
-        String result = covidData.processWorldometerScrape();
+        //String result = covidData.processWorldometerScrape();
+        MySqlToMysqlDowngrade transfer = new MySqlToMysqlDowngrade();
+        String result = transfer.transferCountryHistory();
         System.out.println(result);
     }
 }

@@ -282,293 +282,331 @@
         if ($rank > 0.00) {return "D-";}
         return "F";
     }
+    
+    function  makeColumnIntegers ($rows, $stringIndex) : array {
+        $array = [];
+        for($i = 0; $i < count($rows); $i++) {
+            $array[$i]["country"] = $rows[$i]["country"];
+            $array[$i][$stringIndex] =  intval($rows[$i][$stringIndex]);
+        }
+        return $array;
+    }
+    
+    function  makeColumnReals ($rows, $stringIndex) : array {
+        $array = [];
+        for($i = 0; $i < count($rows); $i++) {
+            $array[$i]["country"] = $rows[$i]["country"];
+            $array[$i][$stringIndex] =  floatval($rows[$i][$stringIndex]);
+        }
+        return $array;
+    }
 
     // create connection string
-    $servername = "52d9225.online-server.cloud";
+    $servername = "550dae4.online-server.cloud";
     $username = "web_php";
     $password = 'nz3Rp"3XZL=2v4.Q';
     $database = "covid";
+    
 
     try {
         // open connection to database
-      $db_conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
-      // set the PDO error mode to exception
-      $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $db_conn = new PDO("mysql:host=$servername;dbname=$database;charset=utf8", $username, $password);
+        // set the PDO error mode to exception
+        $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
    
-    /**
-     * Query to retrieve the world data from the database for computations
-     */
-    define ("WORLD_QUERY" , "SELECT cases, deaths, 
-                active, recovered, population, date, mortality
-                FROM latest_world_totals");
-    /**
-     * Query to retrieve case data from the database
-     */
-    define ("CASE_QUERY", "SELECT country, cases FROM latest_country_cases");
-    /**
-     * Query to retrieve death data from the database
-     */
-    define ("DEATH_QUERY", "SELECT country, deaths FROM latest_country_deaths");
-    /**
-     * Query to retrieve active cases data from the database
-     */
-    define ("ACTIVE_QUERY", 
-            "SELECT country, active FROM latest_country_active");
-    /**
-     * Query to retrieve recovered data from the database
-     */
-    define ("RECOVERED_QUERY", 
-            "SELECT country, recovered FROM latest_country_recovered");
-    /**
-     * Query to retrieve case data for population 10k from the database
-     */
-    define ("CASE10K_QUERY", 
-            "SELECT country, cases FROM latest_country_cases10k");
-    /**
-     * Query to retrieve death data for population 10k from the database
-     */
-    define ("DEATH10K_QUERY", 
-            "SELECT country, deaths FROM latest_country_deaths10k");
-    /**
-     * Query to retrieve active cases data for population 10k from the database
-     */
-    define ("ACTIVE10K_QUERY", 
-            "SELECT country, active FROM latest_country_active10k");
-    /**
-     * Query to retrieve recovered data for population 10k from the database
-     */
-    define ("RECOVERED10K_QUERY", 
-            "SELECT country, recovered FROM latest_country_recovered10k");
-    /**
-     * Query to retrieve population data from the database
-     */
-    define ("POPULATION_QUERY", 
-            "SELECT country, population FROM country_populations");
-    /**
-     * Query to retrieve mortality data from the database
-     */
-    define("MORTALITY_QUERY", 
-            "SELECT country, mortality FROM latest_country_mortality");
-    
-    // get results from world query
-    $stmt = $db_conn->prepare(WORLD_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $worldRow = $stmt->fetch();
-    if (!$worldRow) {
-        die("No World Results");
-    }
-    // get results from the case query
-    $stmt = $db_conn->prepare(CASE_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $caseRows = $stmt->fetchAll();
-    if (!$caseRows) {
-        die("No Case Results");
-    }
-    // get results from the death query
-    $stmt = $db_conn->prepare(DEATH_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $deathRows = $stmt->fetchAll();
-    if (!$deathRows) {
-        die("No Death Results");
-    }
-    // get results from the active query
-    $stmt = $db_conn->prepare(ACTIVE_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $activeRows = $stmt->fetchAll();
-    if (!$activeRows) {
-        die("No Active Case Results");
-    }
-    // get results from the recovered query
-    $stmt = $db_conn->prepare(RECOVERED_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $recoveredRows = $stmt->fetchAll();
-    if (!$recoveredRows) {
-        die("No Recovered Results");
-    }
-    // get results from the case10k query
-    $stmt = $db_conn->prepare(CASE10K_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $case10kRows = $stmt->fetchAll();
-    if (!$case10kRows) {
-        die("No Case10k Results");
-    }
-    // get results from the death10k query
-    $stmt = $db_conn->prepare(DEATH10K_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $death10kRows = $stmt->fetchAll();
-    if (!$death10kRows) {
-        die("No Death10k Results");
-    }
-    // get results from the active10k query
-    $stmt = $db_conn->prepare(ACTIVE10K_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $active10kRows = $stmt->fetchAll();
-    if (!$active10kRows) {
-        die("No Active10k Case Results");
-    }
-    // get results from the recovered10k query
-    $stmt = $db_conn->prepare(RECOVERED10K_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $recovered10kRows = $stmt->fetchAll();
-    if (!$recovered10kRows) {
-        die("No Recovered10k Results");
-    }
-    // get results from the mortality query
-    $stmt = $db_conn->prepare(MORTALITY_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $mortalityRows = $stmt->fetchAll();
-    if (!$mortalityRows) {
-        die("No Mortality Results");
-    }
-    // get results from the population query
-    $stmt = $db_conn->prepare(POPULATION_QUERY);
-    $stmt->execute();
-    // set the resulting array to associative
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
-    $populationRows = $stmt->fetchAll();
-    if (!$populationRows) {
-        die("No Population Results");
-    }
+        /**
+         * Query to retrieve the world data from the database for computations
+         */
+        define ("WORLD_QUERY" , "SELECT cases, deaths, 
+                    active, recovered, population, date, mortality
+                    FROM latest_world_totals");
+        /**
+         * Query to retrieve case data from the database
+         */
+        define ("CASE_QUERY", "SELECT country, cases FROM latest_country_cases");
+        /**
+         * Query to retrieve death data from the database
+         */
+        define ("DEATH_QUERY", "SELECT country, deaths FROM latest_country_deaths");
+        /**
+         * Query to retrieve active cases data from the database
+         */
+        define ("ACTIVE_QUERY", 
+                "SELECT country, active FROM latest_country_active");
+        /**
+         * Query to retrieve recovered data from the database
+         */
+        define ("RECOVERED_QUERY", 
+                "SELECT country, recovered FROM latest_country_recovered");
+        /**
+         * Query to retrieve case data for population 10k from the database
+         */
+        define ("CASE10K_QUERY", 
+                "SELECT country, cases FROM latest_country_cases10k");
+        /**
+         * Query to retrieve death data for population 10k from the database
+         */
+        define ("DEATH10K_QUERY", 
+                "SELECT country, deaths FROM latest_country_deaths10k");
+        /**
+         * Query to retrieve active cases data for population 10k from the database
+         */
+        define ("ACTIVE10K_QUERY", 
+                "SELECT country, active FROM latest_country_active10k");
+        /**
+         * Query to retrieve recovered data for population 10k from the database
+         */
+        define ("RECOVERED10K_QUERY", 
+                "SELECT country, recovered FROM latest_country_recovered10k");
+        /**
+         * Query to retrieve population data from the database
+         */
+        define ("POPULATION_QUERY", 
+                "SELECT country, population FROM country_populations");
+        /**
+         * Query to retrieve mortality data from the database
+         */
+        define("MORTALITY_QUERY", 
+                "SELECT country, mortality FROM latest_country_mortality");
+
+
+
+        // get results from world query
+        $stmt = $db_conn->prepare(WORLD_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $worldRow = $stmt->fetch();
+        if (!$worldRow) {
+            die("No World Results");
+        }
+        $worldRow["cases"] = intval($worldRow["cases"]);
+        $worldRow["deaths"] = intval($worldRow["deaths"]);
+        $worldRow["active"] = intval($worldRow["active"]);
+        $worldRow["recovered"] = intval($worldRow["recovered"]);
+        $worldRow["population"] = intval($worldRow["population"]);
+        $worldRow["mortality"] = floatval($worldRow["mortality"]);
+        // get results from the case query
+        $stmt = $db_conn->prepare(CASE_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $caseResults = $stmt->fetchAll();
+        $caseRows = makeColumnIntegers($caseResults, "cases");
+        if (!$caseRows) {
+           die("No Case Results");
+        }
+        // get results from the death query
+        $stmt = $db_conn->prepare(DEATH_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $deathResults = $stmt->fetchAll();
+        $deathRows = makeColumnIntegers($deathResults, "deaths");
+        if (!$deathRows) {
+            die("No Death Results");
+        }
+        // get results from the active query
+        $stmt = $db_conn->prepare(ACTIVE_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $activeResults = $stmt->fetchAll();
+        $activeRows = makeColumnIntegers($activeResults, "active");
+        if (!$activeRows) {
+            die("No Active Case Results");
+        }
+        // get results from the recovered query
+        $stmt = $db_conn->prepare(RECOVERED_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $recoveredResults = $stmt->fetchAll();
+        $recoveredRows = makeColumnIntegers($recoveredResults, "recovered");
+        if (!$recoveredRows) {
+            die("No Recovered Results");
+        }
+        // get results from the case10k query
+        $stmt = $db_conn->prepare(CASE10K_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $case10kResults = $stmt->fetchAll();
+        $case10kRows = makeColumnReals($case10kResults, "cases");
+        if (!$case10kRows) {
+            die("No Case10k Results");
+        }
+        // get results from the death10k query
+        $stmt = $db_conn->prepare(DEATH10K_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $death10kResults = $stmt->fetchAll();
+        $death10kRows = makeColumnReals($death10kResults, "deaths");
+        if (!$death10kRows) {
+            die("No Death10k Results");
+        }
+        // get results from the active10k query
+        $stmt = $db_conn->prepare(ACTIVE10K_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $active10kResults = $stmt->fetchAll();
+        $active10kRows = makeColumnReals($active10kResults, "active");
+        if (!$active10kRows) {
+            die("No Active10k Case Results");
+        }
+        // get results from the recovered10k query
+        $stmt = $db_conn->prepare(RECOVERED10K_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $recovered10kResults = $stmt->fetchAll();
+        $recovered10kRows = makeColumnReals($recovered10kResults, "recovered");
+        if (!$recovered10kRows) {
+            die("No Recovered10k Results");
+        }
+        // get results from the mortality query
+        $stmt = $db_conn->prepare(MORTALITY_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $mortalityRequests = $stmt->fetchAll();
+        $mortalityRows = makeColumnReals($mortalityRequests, "mortality");
+        if (!$mortalityRows) {
+            die("No Mortality Results");
+        }
+        // get results from the population query
+        $stmt = $db_conn->prepare(POPULATION_QUERY);
+        $stmt->execute();
+        // set the resulting array to associative
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $populationRequests = $stmt->fetchAll();
+        $populationRows = makeColumnIntegers($populationRequests, "population");
+        if (!$populationRows) {
+            die("No Population Results");
+        }
         // set JSON header
         header('Content-Type: application/json');
-    // close database connection
-    $db_conn = null;
-    // create population associative array
-    $populations = convertRows($populationRows, "population");
-    // create ranks for populations
-    $populationRanks = createRanks($populationRows);
-    // create motality associative array
-    $mortalities = convertRows($mortalityRows, "mortality");
-    // create death associative array
-    $deaths = convertRows($deathRows, "deaths");
-    // create case associative array
-    $cases = convertRows($caseRows, "cases");
-    // create active case associative array
-    $actives = convertRows($activeRows, "active");
-    // create recovered associative array
-    $recoveries = convertRows($recoveredRows, "recovered");
-    // convert world values to 10k population
-    $world10K = createWorld10k($worldRow);
-    // create case ranks
-    $caseRank = createRanksAsc($case10kRows, "cases");
-    $caseRanks = assignRanks($caseRank);
-    // create case1 0k associative array
-    $case10k = convertRows($case10kRows, "cases");
-    // create case 10k ranks
-    $case10kRank = createRanks($case10kRows);
-    // create death ranks
-    $deathRank = createRanksAsc($death10kRows, "deaths");
-    $deathRanks = assignRanks($deathRank);
-    // create death 10k associative array
-    $death10k = convertRows($death10kRows, "deaths");
-    // create death 10k ranks
-    $death10kRank = createRanks($death10kRows);
-    // create active case ranks
-    $activeRank = createRanksAsc($active10kRows, "active");
-    $activeRanks = assignRanks($activeRank);
-    // create active 10k associative array
-    $active10k = convertRows($active10kRows, "active");
-    // create active 10k ranks
-    $active10kRank = createRanks($active10kRows);
-    // create recovered case ranks
-    $recoveredRank = createRanksDesc($recovered10kRows, "recovered");
-    $recoveredRanks = assignRanks($recoveredRank);
-    // create recovered 10k associative array
-    $recovered10k = convertRows($recovered10kRows, "recovered");
-    // create recovered 10k ranks
-    $recovered10kRank = createRanks($recovered10kRows);
-    // begin country loop
-    for ($i = 0; $i < count($populationRows); $i++) {
-        // set country
-        $country = $populationRows[$i]["country"];
-        $jsonEntry["country"] = $country;
-        // set percent of world population
-        $jsonEntry["pcOfWorldPopulation"] = $populationRows[$i]["population"] / 
-                $worldRow["population"] *100;
-        // set percent of world mortality
-        $jsonEntry["pcOfWorldMortality"] = ($mortalities[$country] * 
-                ($cases[$country] / $populationRows[$i]["population"])) / 
-                ($worldRow["mortality"]) 
-                * 100;
-        // set percent of world deaths
-        $jsonEntry["pcOfWorldDeaths"] = $deaths[$country] / 
-                $worldRow["deaths"] * 100;
-        // set percent of world active cases
-        $jsonEntry["pcOfActiveCases"] = $actives[$country] / 
-                $worldRow["active"] * 100;
-        // set persent of world recovered
-        $jsonEntry["pcOfRecovered"] = $recoveries[$country] / 
-                $worldRow["recovered"] * 100;
-        // set percent of world cases
-        $jsonEntry["pcOfTotalCases"] = $cases[$country] / 
-                $worldRow["cases"] * 100;
-        // set population
-        $jsonEntry["population"] = $populations[$country];
-        // set population world rank
-        $jsonEntry["populationWorldRank"] = $populationRanks[$country];
-        // set deaths per 10k population
-        $jsonEntry["deaths10k"] = $death10k[$country];
-        $deathsRank = $death10kRank[$country];
-        // set deaths per 10k population rank
-        $jsonEntry["deaths10kRank"] = $deathsRank;
-        $deathsScore = get10kRankScore($deathRanks, $death10k[$country]);
-        // set deaths per 10k population score
-        $jsonEntry["deaths10kScore"] = $deathsScore;
-        // set active cases per 10k population
-        $jsonEntry["activeCases10k"] = $active10k[$country];
-        $activesRank = $active10kRank[$country];
-        // set active cases per 10k population rank
-        $jsonEntry["activeCases10kRank"] = $activesRank;
-        $activesScore = get10kRankScore($activeRanks, $active10k[$country]);
-        // set active cases per 10k population score
-        $jsonEntry["activeCases10kScore"] = $activesScore;
-        // set recovered per 10k population
-        $jsonEntry["recovered10k"] = $recovered10k[$country];
-        $recoveriesRank = $recovered10kRank[$country];
-        // set recovered per 10k population rank
-        $jsonEntry["recovered10kRank"] = $recoveriesRank;
-        $recoveriesScore = get10kRankScore($recoveredRanks, $recovered10k[$country]);
-        // set recovered per 10k population score
-        $jsonEntry["recovered10kScore"] = $recoveriesScore;
-        // set cases per 10k population
-        $jsonEntry["totalCases10k"] = $case10k[$country];
-        $casesRank = $case10kRank[$country];
-        // set cases per 10k population rank
-        $jsonEntry["totalCases10kRank"] = $casesRank;
-        $casesScore = get10kRankScore($caseRanks, $case10k[$country]);
-        // set cases per 10k population score
-        $jsonEntry["totalCases10kScore"] = $casesScore;
-        $jsonEntry["rank"] = ($deathsRank + $activesRank + $casesRank + 
-                $recoveriesRank) / 4;
-        $jsonEntry["score"] = getRankToScore((getScoreToRank($deathsScore) +
-                getScoreToRank($activesScore) + getScoreToRank($casesScore) +
-                getScoreToRank($recoveriesScore)) / 4);
-        // add entry to array
-        $jsonArray[$i] = $jsonEntry;
-    }
+        // close database connection
+        $db_conn = null;
+        // create population associative array
+        $populations = convertRows($populationRows, "population");
+        // create ranks for populations
+        $populationRanks = createRanks($populationRows);
+        // create motality associative array
+        $mortalities = convertRows($mortalityRows, "mortality");
+        // create death associative array
+        $deaths = convertRows($deathRows, "deaths");
+        // create case associative array
+        $cases = convertRows($caseRows, "cases");
+        // create active case associative array
+        $actives = convertRows($activeRows, "active");
+        // create recovered associative array
+        $recoveries = convertRows($recoveredRows, "recovered");
+        // convert world values to 10k population
+        $world10K = createWorld10k($worldRow);
+        // create case ranks
+        $caseRank = createRanksAsc($case10kRows, "cases");
+        $caseRanks = assignRanks($caseRank);
+        // create case1 0k associative array
+        $case10k = convertRows($case10kRows, "cases");
+        // create case 10k ranks
+        $case10kRank = createRanks($case10kRows);
+        // create death ranks
+        $deathRank = createRanksAsc($death10kRows, "deaths");
+        $deathRanks = assignRanks($deathRank);
+        // create death 10k associative array
+        $death10k = convertRows($death10kRows, "deaths");
+        // create death 10k ranks
+        $death10kRank = createRanks($death10kRows);
+        // create active case ranks
+        $activeRank = createRanksAsc($active10kRows, "active");
+        $activeRanks = assignRanks($activeRank);
+        // create active 10k associative array
+        $active10k = convertRows($active10kRows, "active");
+        // create active 10k ranks
+        $active10kRank = createRanks($active10kRows);
+        // create recovered case ranks
+        $recoveredRank = createRanksDesc($recovered10kRows, "recovered");
+        $recoveredRanks = assignRanks($recoveredRank);
+        // create recovered 10k associative array
+        $recovered10k = convertRows($recovered10kRows, "recovered");
+        // create recovered 10k ranks
+        $recovered10kRank = createRanks($recovered10kRows);
+        // begin country loop
+        for ($i = 0; $i < count($populationRows); $i++) {
+            // set country
+            $country = $populationRows[$i]["country"];
+            $jsonEntry["country"] = $country;
+            // set percent of world population
+            $jsonEntry["pcOfWorldPopulation"] = $populationRows[$i]["population"] / 
+                    $worldRow["population"] *100;
+            // set percent of world mortality
+            $jsonEntry["pcOfWorldMortality"] = ($mortalities[$country] * 
+                    ($cases[$country] / $populationRows[$i]["population"])) / 
+                    ($worldRow["mortality"]) 
+                    * 100;
+            // set percent of world deaths
+            $jsonEntry["pcOfWorldDeaths"] = $deaths[$country] / 
+                    $worldRow["deaths"] * 100;
+            // set percent of world active cases
+            $jsonEntry["pcOfActiveCases"] = $actives[$country] / 
+                    $worldRow["active"] * 100;
+            // set persent of world recovered
+            $jsonEntry["pcOfRecovered"] = $recoveries[$country] / 
+                    $worldRow["recovered"] * 100;
+            // set percent of world cases
+            $jsonEntry["pcOfTotalCases"] = $cases[$country] / 
+                    $worldRow["cases"] * 100;
+            // set population
+            $jsonEntry["population"] = $populations[$country];
+            // set population world rank
+            $jsonEntry["populationWorldRank"] = $populationRanks[$country];
+            // set deaths per 10k population
+            $jsonEntry["deaths10k"] = $death10k[$country];
+            $deathsRank = $death10kRank[$country];
+            // set deaths per 10k population rank
+            $jsonEntry["deaths10kRank"] = $deathsRank;
+            $deathsScore = get10kRankScore($deathRanks, $death10k[$country]);
+            // set deaths per 10k population score
+            $jsonEntry["deaths10kScore"] = $deathsScore;
+            // set active cases per 10k population
+            $jsonEntry["activeCases10k"] = $active10k[$country];
+            $activesRank = $active10kRank[$country];
+            // set active cases per 10k population rank
+            $jsonEntry["activeCases10kRank"] = $activesRank;
+            $activesScore = get10kRankScore($activeRanks, $active10k[$country]);
+            // set active cases per 10k population score
+            $jsonEntry["activeCases10kScore"] = $activesScore;
+            // set recovered per 10k population
+            $jsonEntry["recovered10k"] = $recovered10k[$country];
+            $recoveriesRank = $recovered10kRank[$country];
+            // set recovered per 10k population rank
+            $jsonEntry["recovered10kRank"] = $recoveriesRank;
+            $recoveriesScore = get10kRankScore($recoveredRanks, $recovered10k[$country]);
+            // set recovered per 10k population score
+            $jsonEntry["recovered10kScore"] = $recoveriesScore;
+            // set cases per 10k population
+            $jsonEntry["totalCases10k"] = $case10k[$country];
+            $casesRank = $case10kRank[$country];
+            // set cases per 10k population rank
+            $jsonEntry["totalCases10kRank"] = $casesRank;
+            $casesScore = get10kRankScore($caseRanks, $case10k[$country]);
+            // set cases per 10k population score
+            $jsonEntry["totalCases10kScore"] = $casesScore;
+            $jsonEntry["rank"] = ($deathsRank + $activesRank + $casesRank + 
+                    $recoveriesRank) / 4;
+            $jsonEntry["score"] = getRankToScore((getScoreToRank($deathsScore) +
+                    getScoreToRank($activesScore) + getScoreToRank($casesScore) +
+                    getScoreToRank($recoveriesScore)) / 4);
+            // add entry to array
+            $jsonArray[$i] = $jsonEntry;
+        }
         // encode json array
         $json = json_encode($jsonArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        //$json = json_encode($worldRow, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         /* Return the JSON string. */
         echo $json;
     } catch(PDOException $e) {
