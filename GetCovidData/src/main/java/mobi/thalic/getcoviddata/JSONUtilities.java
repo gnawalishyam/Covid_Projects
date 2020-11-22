@@ -36,7 +36,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 /**
- *
+ * Class to get and process json
  * @author Gary Larson gary@thalic.mobi
  */
 public class JSONUtilities {
@@ -87,13 +87,13 @@ public class JSONUtilities {
                 data.add(temp);
                 dataList.add(data);
             }
-         //       }
-        //    }
             return dataList;
         } catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
+            mResults.addResults("processJsonArray FileNotFound Exception " + 
+                    e.getMessage());
         } catch (IOException | ParseException e) {
-            System.out.println(e.getMessage());
+            mResults.addResults("processJsonArray IO or parse Exception " + 
+                    e.getMessage());
         }  
         return null;
     }

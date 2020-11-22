@@ -402,7 +402,7 @@ public class Calculations {
     
     /**
      * Setter for overall score
-     * @param score 
+     * @param score to set
      */
     public void setScore(String score) {
         this.score = score;

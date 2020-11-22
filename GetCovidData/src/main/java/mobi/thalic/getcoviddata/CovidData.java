@@ -195,8 +195,8 @@ public class CovidData {
     
     /**
      * Method to create the data points for the front end
-     * @param conn
-     * @param date 
+     * @param conn connection to database
+     * @param date of data
      */
     public void calculateTotal(Connection conn, java.sql.Date date) {
         // get data from database
