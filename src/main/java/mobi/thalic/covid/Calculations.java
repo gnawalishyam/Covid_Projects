@@ -19,6 +19,7 @@ public class Calculations {
     private double percentActive;
     private double percentRecovered;
     private double percentCases;
+    private long population;
     private int populationRank;
     private double deaths10k;
     private int deaths10kRank;
@@ -166,6 +167,22 @@ public class Calculations {
      */
     public void setPercentCases(double percent) {
         this.percentCases = percent;
+    }
+    
+    /**
+     * Getter for population
+     * @return population
+     */
+    public long getPopulation() {
+        return population;
+    }
+    
+    /**
+     * Setter for population
+     * @param population to set
+     */
+    public void setPopulation(long population) {
+        this.population = population;
     }
     
     /**

@@ -1685,19 +1685,20 @@ public class DatabaseUtilities {
     
     /**
      * Method to insert calculation data to the database
-     * @param conn to the database
+     * @param conn connection to the database
      * @param calc calculation data
      */
     public void insertCalculation(Connection conn, Calculations calc) {
         final String INSERT_CALCULATIONS_SQL = "INSERT INTO "
                 + "country_calculations (country, `date`, pc_population, "
                 + "pc_mortality, pc_deaths, pc_active_cases, pc_recovered, "
-                + "pc_total_cases, population_rank, deaths10k, deaths10k_rank, "
-                + "deaths10k_score, active10k, active10k_rank, active10k_score,"
-                + " recovered10k, recovered10k_rank, recovered10k_score, "
-                + "cases10k, cases10k_rank, cases10k_score, rank, score) "
+                + "pc_total_cases, population, population_rank, deaths10k, "
+                + "deaths10k_rank, deaths10k_score, active10k, active10k_rank, "
+                + "active10k_score, recovered10k, recovered10k_rank, "
+                + "recovered10k_score, cases10k, cases10k_rank, cases10k_score, "
+                + "rank, score) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                + "?, ?, ?, ?, ?, ?);";
+                + "?, ?, ?, ?, ?, ?, ?);";
         try ( 
             // statement to use
             PreparedStatement statement = 
@@ -1718,36 +1719,38 @@ public class DatabaseUtilities {
             statement.setDouble(7, calc.getPercentRecovered());
             // add percent of total cases parameter
             statement.setDouble(8, calc.getPercentCases());
+            // add population parameter
+            statement.setLong(9, calc.getPopulation());
             // add population rank parameter
-            statement.setInt(9, calc.getPopulationRank());
+            statement.setInt(10, calc.getPopulationRank());
             // add deaths10k parameter
-            statement.setDouble(10, calc.getDeaths10k());
+            statement.setDouble(11, calc.getDeaths10k());
             // add deaths10k rank parameter
-            statement.setInt(11, calc.getDeaths10kRank());
+            statement.setInt(12, calc.getDeaths10kRank());
             // add deaths10k score parameter
-            statement.setString(12, calc.getDeaths10kScore());
+            statement.setString(13, calc.getDeaths10kScore());
             // add active10k parameter
-            statement.setDouble(13, calc.getActive10k());
+            statement.setDouble(14, calc.getActive10k());
             // add active10k rank parameter
-            statement.setInt(14, calc.getActive10kRank());
+            statement.setInt(15, calc.getActive10kRank());
             // add active10k score parameter
-            statement.setString(15, calc.getActive10kScore());
+            statement.setString(16, calc.getActive10kScore());
             // add recovered10k parameter
-            statement.setDouble(16, calc.getRecovered10k());
+            statement.setDouble(17, calc.getRecovered10k());
             // add recovered10k rank parameter
-            statement.setInt(17, calc.getRecovered10kRank());
+            statement.setInt(18, calc.getRecovered10kRank());
             // add recovered10k score parameter
-            statement.setString(18, calc.getRecovered10kScore());
+            statement.setString(19, calc.getRecovered10kScore());
             // add cases10k parameter
-            statement.setDouble(19, calc.getCases10k());
+            statement.setDouble(20, calc.getCases10k());
             // add cases10k rank parameter
-            statement.setInt(20, calc.getCases10kRank());
+            statement.setInt(21, calc.getCases10kRank());
             // add cases10k score parameter
-            statement.setString(21, calc.getCases10kScore());
+            statement.setString(22, calc.getCases10kScore());
             // add overall rank parameter
-            statement.setInt(22, calc.getRank());
+            statement.setInt(23, calc.getRank());
             // add overall score parameter
-            statement.setString(23, calc.getScore());
+            statement.setString(24, calc.getScore());
             // run statement
             statement.execute();
             // close statement

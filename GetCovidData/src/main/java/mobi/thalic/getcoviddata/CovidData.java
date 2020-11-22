@@ -195,8 +195,8 @@ public class CovidData {
     
     /**
      * Method to create the data points for the front end
-     * @param conn connection to database
-     * @param date of data
+     * @param conn connection to the database
+     * @param date of the data
      */
     public void calculateTotal(Connection conn, java.sql.Date date) {
         // get data from database
@@ -318,6 +318,8 @@ public class CovidData {
                     worldData.getCases()) * 100);
             // set percent of mortality
             calc.setPercentMortality(mortalityData.get(country));
+            // set population
+            calc.setPopulation(populationData.get(country));
             // set population rank
             calc.setPopulationRank(populationRanks.get(country));
             // set deaths per 10,000 population
