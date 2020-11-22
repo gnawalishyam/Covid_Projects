@@ -17,14 +17,16 @@ public class GetCovidData {
      * @param args command line arguments
      */
     public static void main(String[] args)  {
-        
+        Results results = new Results();
 
-        //CovidData covidData = new CovidData();   
-        //String result = covidData.createStateDailies();
+        CovidData covidData = new CovidData(results);   
+        //covidData.createStateDailies();
         //String result = covidData.createCountryDailies();
-        //String result = covidData.processWorldometerScrape();
-        MySqlToMysqlDowngrade transfer = new MySqlToMysqlDowngrade();
-        String result = transfer.transferCountryHistory();
-        System.out.println(result);
+        //covidData.processWorldometerScrape();
+        covidData.createCalculations();
+            
+        //covidData.getStatData();
+        //JSONUtilities.processJsonArray();
+        System.out.println(results.getResults());
     }
 }

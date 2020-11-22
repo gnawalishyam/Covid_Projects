@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2020 Gary Larson <gary@thalic.mobi>.
+ * Copyright 2020 Gary Larson gary@thalic.mobi.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,33 @@
 package mobi.thalic.getcoviddata;
 
 /**
- * Main java class 
+ * Class to accumulate errors
  * @author Gary Larson gary@thalic.mobi
  */
-public class GetJavaData {
-
+public class Results {
+    // declare member variables
+    private String mResults;
+    
     /**
-     * @param args the command line arguments
+     * Default constructor
      */
-    public static void main(String[] args) {
-        Results results = new Results();
-
-        CovidData covidData = new CovidData(results);  
-        covidData.processWorldometerScrape();
-        System.out.println(results.getResults());
+    public Results() {
+        mResults = "";
+    }
+    
+    /**
+     * Getter for string
+     * @return string
+     */
+    public String getResults () {
+        return mResults;
+    }
+    
+    /**
+     * Method to add an error to the errors
+     * @param result to add
+     */
+    public void addResults(String result) {
+        mResults += result + "\n";
     }
 }

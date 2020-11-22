@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2020 Gary Larson <gary@thalic.mobi>.
+ * Copyright 2020 Gary Larson gary@thalic.mobi.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,58 @@
 package mobi.thalic.getcoviddata;
 
 /**
- * Main java class 
+ *
  * @author Gary Larson gary@thalic.mobi
  */
-public class GetJavaData {
-
+public class CountryLong {
+    // Declare member variables
+    private String country;
+    private long value;
+    
     /**
-     * @param args the command line arguments
+     * Default constructor
      */
-    public static void main(String[] args) {
-        Results results = new Results();
-
-        CovidData covidData = new CovidData(results);  
-        covidData.processWorldometerScrape();
-        System.out.println(results.getResults());
+    public CountryLong () {};
+    
+    /**
+     * Constructor for all variables
+     * @param country to set
+     * @param value to set
+     */
+    public CountryLong (String country, long value) {
+        this.country = country;
+        this.value = value;
+    }
+    
+    /**
+     * Getter for country
+     * @return country
+     */
+    public String getCountry() {
+        return country;
+    }
+    
+    /**
+     * Setter for country
+     * @param country to set
+     */
+    public void setCountry(String country) {
+        this.country = country;
+    }
+    
+    /**
+     * Getter for value
+     * @return value
+     */
+    public long getValue() {
+        return value;
+    }
+    
+    /**
+     * Setter for value
+     * @param value to set
+     */
+    public void setValue(long value) {
+        this.value = value;
     }
 }
