@@ -81,7 +81,7 @@ public class JSONUtilities {
                 data.add(temp);
                 temp = (String) jsonData.get("deces");
                 data.add(temp);
-                temp = (String) jsonData.get("gueaisons");
+                temp = (String) jsonData.get("guerisons");
                 data.add(temp);
                 temp = (String) jsonData.get("source");
                 data.add(temp);

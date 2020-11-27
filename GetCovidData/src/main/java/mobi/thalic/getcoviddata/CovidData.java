@@ -81,7 +81,8 @@ public class CovidData {
         
         
         try {
-            fileReader = new BufferedReader(new FileReader("/etc/get_covid_data.ini"));
+            fileReader = new BufferedReader(new FileReader("/etc/get_covid_data.ini")); // Development
+            //fileReader = new BufferedReader(new FileReader("/etc/get_prod_data.ini")); // Production
             while ((inputString = fileReader.readLine()) != null) {
                 if (inputString.contains(",")) {
                     String[] data = inputString.split(",");
@@ -122,13 +123,23 @@ public class CovidData {
         // declare and initialize variable
         Connection conn = getDatabaseConnection();
         
-        mResults.addResults("United States Results");
+        mResults.addResults(" United States Results");
         processUnitedStatesScrape(conn);
         mResults.addResults("\n\n World Results");
         processWorldScrape(conn);
+        mResults.addResults("Completed World o meter scrape");
         // close connection
         databaseUtilities.closeConnection(conn);
-        mResults.addResults("Completed Eorld o meter scrape");
+        mResults.addResults("\n\n Get Stat Totals");
+        getStatData();
+        mResults.addResults("Completed Stat Totals");
+        mResults.addResults("\n\n Calculate Totals");
+        // declare and initialize variable
+        conn = getDatabaseConnection();
+        calculateTotal(conn, YESTERDAY_DATE);
+        // close connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed Calaulate Totals");
     }
     
     /**
@@ -188,8 +199,6 @@ public class CovidData {
             writeWorldToDatabase(conn, worldStrings);
             mResults.addResults( 
                     "Successfully acquired world covid data");
-            getStatData();
-            calculateTotal(conn, YESTERDAY_DATE);
         }
     }
     
@@ -1022,7 +1031,6 @@ public class CovidData {
         do {
             // open connection to database
             conn = 
-                //databaseUtilities.connect(configMap.get("MYSQL_CONNECTION"), // delete after testing
                 databaseUtilities.connect(configMap.get("DB_CONNECT"),
                 configMap.get("DB_USER_NAME"), 
                 configMap.get("DB_USER_PASSWORD"));

@@ -18,6 +18,16 @@ import java.util.List;
  * @author GaryL
  */
 public class CSVUtilities {
+    // Declare member varaible
+    Results mResults;
+    
+    /**
+     * Default constructor
+     * @param results to keep track of errors
+     */
+    public CSVUtilities (Results results) {
+        mResults = results;
+    }
     
     /**
      * Method to read a csv file and return a list of list of strings
@@ -71,7 +81,8 @@ public class CSVUtilities {
             }
             csvReader.close();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            mResults.addResults("getCSVFile " + fileName + " " + 
+                    e.getMessage());
         }
         return listStringLists;
     }
@@ -80,10 +91,8 @@ public class CSVUtilities {
      * Method to write a csv data to a file
      * @param lists the data in the form of a list of lists of strings
      * @param fileName to save data to
-     * @throws IOException
      */
-    public void writeCSVFile(List<List<String>> lists, String fileName) 
-            throws IOException {
+    public void writeCSVFile(List<List<String>> lists, String fileName) {
         // convert list of list of string to one string
         String contents = createCSVString(lists);
         
@@ -93,6 +102,9 @@ public class CSVUtilities {
             // write the contents to the file
             myWriter.write(contents);
             // close the file
+        }catch(IOException e) {
+            mResults.addResults("writeCSVFile " + fileName + " " + 
+                    e.getMessage());
         }
     }
 
@@ -101,8 +113,7 @@ public class CSVUtilities {
      * @param lists the data to convert
      * @return a complete comma-separated values string
      */
-    private String createCSVString(List<List<String>> lists) 
-            throws IOException {
+    private String createCSVString(List<List<String>> lists) {
         // Declare variables
         String[] stringArray = new String[lists.size()];
         StringBuilder finalString = new StringBuilder();
