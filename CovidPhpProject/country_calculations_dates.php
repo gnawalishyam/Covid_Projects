@@ -23,7 +23,6 @@
  * THE SOFTWARE.
  */
 
-    
     // create connection string
     $servername = "52d9225.online-server.cloud";
     $username = "web_php";
@@ -35,33 +34,30 @@
         $db_conn = new PDO("mysql:host=$servername;dbname=$database;charset=utf8", $username, $password);
         // set the PDO error mode to exception
         $db_conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   
         if (!$db_conn) {
             die("Could not connect");
         }
-        define ("TABLE_QUERY", "SELECT country, label
-                    FROM country_labels INNER JOIN country_codes 
-                    ON country_labels.country_id = country_codes.id
-                    WHERE country_codes.alpha_2 NOT IN ('R', 'S')
-                    ORDER BY country");
-        // create statement
-        $stmt = $db_conn->prepare(TABLE_QUERY);
-        // get results from table query
+        
+        define ("DATE_QUERY", "SELECT DISTINCT `date` FROM country_calculations "
+                . "ORDER BY `date` DESC;");
+        
+        // get results from the date query
+        $stmt = $db_conn->prepare(DATE_QUERY);
         $stmt->execute();
-        // set the resulting array to associative
+        // set the results to associative
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        if (!$stmt) {
-            die("No Table Results");
+        if(!$stmt) {
+            die("No Date Results");
         }
-        // Build table body
+        
+        // Build ui list
         while ($row = $stmt->fetch()) {
-          echo "<tr>";
-          echo "<td>" . $row["country"] . "</td>";
-          echo "<td>" . $row["label"] . "</td>";
-          echo "</tr>";
+            echo '<li><a href="#" onclick=loadTable("' . $row["date"] . '");>' . 
+                    $row["date"] . '</a>';
         }
-        // close database connection
-        $db_conn = null;
+      // close database connection
+      $db_conn = null;
     } catch(PDOException $e) {
-        echo "Connection failed: " . $e->getMessage();
+      echo "Connection failed: " . $e->getMessage();
     }
-

@@ -24,8 +24,9 @@ public class GetCovidData {
         //String result = covidData.createCountryDailies();
         //covidData.processWorldometerScrape();
         //covidData.createCalculations();
-        covidData.createCSVFile();
+        //covidData.createCSVFile();
         //covidData.getStatData();
+        covidData.createCalculations();
         //JSONUtilities.processJsonArray();
         System.out.println(results.getResults());
     }

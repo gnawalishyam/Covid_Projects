@@ -23,7 +23,6 @@
  * THE SOFTWARE.
  */
 
-    $userDate = filter_input(INPUT_POST, 'date');
     // create connection string
     $servername = "52d9225.online-server.cloud";
     $username = "web_php";
@@ -40,53 +39,23 @@
             die("Could not connect");
         }
         
-        define ("DATE_QUERY", "SELECT MAX(`date`) AS mdate FROM country_totals");
-        if ($userDate == null) {
-            // get results from the date query
-            $stmt = $db_conn->prepare(DATE_QUERY);
-            $stmt->execute();
-            // set the results to associative
-            $stmt->setFetchMode(PDO::FETCH_ASSOC);
-            if(!$stmt) {
-                die("No Date Results");
-            }
-            // get result
-            $row = $stmt->fetch();
-            // get date
-            $date = $row["mdate"];
-        } else {
-            $date = $userDate;
-        }
+        define ("DATE_QUERY", "SELECT DISTINCT `date` FROM country_totals "
+                . "ORDER BY `date` DESC;");
         
-        define ("TABLE_QUERY", "SELECT display, cases, active, deaths,
-                    cases - active - deaths AS recovered
-                    FROM country_totals 
-                    INNER JOIN country_codes 
-                    ON country_totals.country_id = country_codes.id
-                    WHERE date = :dateParam AND country_codes.alpha_2 NOT IN ('R', 'S')
-                    ORDER BY display");
-        
-        // get results from the table query
-        $stmt = $db_conn->prepare(TABLE_QUERY);
-        // add parameter
-        $stmt->bindParam(':dateParam', $date);
+        // get results from the date query
+        $stmt = $db_conn->prepare(DATE_QUERY);
         $stmt->execute();
-        // set the resulting array to associative
+        // set the results to associative
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        if (!$stmt) {
-            die("No Table Results");
+        if(!$stmt) {
+            die("No Date Results");
         }
-      // Build table body
-      while ($row = $stmt->fetch()) {
-        echo "<tr>";
-        echo "<td>" . $row["display"] . "</td>";
-        echo "<td>" . number_format(intval($row["cases"])) . "</td>";
-        echo "<td>" . number_format(intval($row["active"])) . "</td>";
-        echo "<td>" . number_format(intval($row["deaths"])) . "</td>"; 
-        echo "<td>" . number_format(intval($row["recovered"])) . "</td>";
-        echo "<td>" . $date . "</td>";
-        echo "</tr>";
-      }
+        
+        // Build ui list
+        while ($row = $stmt->fetch()) {
+            echo '<li><a href="#" onclick=loadTable("' . $row["date"] . '");>' . 
+                    $row["date"] . '</a>';
+        }
       // close database connection
       $db_conn = null;
     } catch(PDOException $e) {

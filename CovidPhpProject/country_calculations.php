@@ -24,8 +24,9 @@
  * THE SOFTWARE.
  */
 
-// create connection string
-    $servername = "550dae4.online-server.cloud";
+    $userDate = filter_input(INPUT_POST, 'date');
+    // create connection string
+    $servername = "52d9225.online-server.cloud";
     $username = "web_php";
     $password = 'nz3Rp"3XZL=2v4.Q';
     $database = "covid";
@@ -42,28 +43,32 @@
         
         define ("DATE_QUERY", "SELECT MAX(`date`) AS mdate FROM country_calculations");
         
-        // get results from the date query
-        $stmt = $db_conn->prepare(DATE_QUERY);
-        $stmt->execute();
-        // set the results to associative
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        if(!$stmt) {
-            die("No Date Results");
+        if ($userDate == null) {
+            // get results from the date query
+            $stmt = $db_conn->prepare(DATE_QUERY);
+            $stmt->execute();
+            // set the results to associative
+            $stmt->setFetchMode(PDO::FETCH_ASSOC);
+            if(!$stmt) {
+                die("No Date Results");
+            }
+            // get result
+            $row = $stmt->fetch();
+            // get date
+            $date = $row["mdate"];
+        } else {
+            $date = $userDate;
         }
-        // get result
-        $row = $stmt->fetch();
-        // get date
-        $date = $row["mdate"];
         
         define ("TABLE_QUERY", "SELECT country, pc_population, pc_mortality, 
             pc_deaths, pc_active_cases, pc_recovered, pc_total_cases, population,
             population_rank, deaths10k, deaths10k_rank, deaths10k_score, 
             active10k, active10k_rank, active10k_score, recovered10k, 
             recovered10k_rank, recovered10k_score, cases10k, cases10k_rank,
-            cases10k_score, rank, score
+            cases10k_score, `rank`, score 
             FROM country_calculations 
-            WHERE date = :dateParam
-            ORDER BY country");
+            WHERE `date` = :dateParam
+            ORDER BY country;");
         // get results from the table query
         $stmt = $db_conn->prepare(TABLE_QUERY);
         // add parameter

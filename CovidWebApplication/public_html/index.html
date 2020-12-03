@@ -30,51 +30,58 @@
   <title>Country Calculations</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/bootstrap.css">
-  <script src="js/jquery.js"></script>
-  <script src="js/popper-2.x.js"></script>
-  <script src="js/bootstrap.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <script>
     function loadTable(mydate) {
-        $.ajax(
-            'country_calculations.php',
+        if (mydate == null) 
+            $.ajax(
+            'country_calculations_dates.php',
             {
-                success: function(mydata) {
-                    $('#tableBody').html(mydata);
+                success: function(mylist) {
+                    $('#listItems').html(mylist);
                 },
                 error: function() {
-                  alert('There was some error performing the AJAX call!');
+                  alert('There was some error performing the AJAX call to country dates!');
                 }
              }
           );
         
-      
+        $.ajax({
+            url: 'country_calculations.php',
+            type: "POST",
+            data: ({date: mydate}),
+                success: function(mydata) {
+                    $('#tableBody').html(mydata);
+                },
+                error: function() {
+                  alert('There was some error performing the AJAX call to country calculations!');
+                }
+             }
+          );
     }
   </script>
 </head>
 <body onload="loadTable(null)">
-    <nav class="navbar navbar-expand-md navbar-dark sticky-top bg-dark">
-      <a class="navbar-brand" href="#">Real Deal Analytics</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarsExample04">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item active">
-            <a class="nav-link" href="#" >Country Calculations<span class="sr-only">(current)</span></a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">Country Totals</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="country_codes.html">Country Codes</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="country_labels.html">Country Labels</a>
-          </li>
-        </ul>
-      </div>
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <a class="navbar-brand" href="#">Real Deal Analytics</a>
+          </div>
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="index.html">Country Calculations</a></li>
+            <li><a href="country_totals.html">Country Totals</a></li>
+            <li><a href="country_codes.html">Country Codes</a></li>
+            <li><a href="country_labels.html">Country Labels</a>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Dates
+              <span class="caret"></span></a>
+              <ul class="dropdown-menu" id="listItems">
+              </ul>
+            </li>
+          </ul>
+        </div>
     </nav>
     <div class="container">
         <h1>Country Calculations Table </h1> 

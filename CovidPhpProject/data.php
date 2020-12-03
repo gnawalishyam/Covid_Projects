@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
     // create connection string
-    $servername = "550dae4.online-server.cloud";
+    $servername = "52d9225.online-server.cloud";
     $username = "web_php";
     $password = 'nz3Rp"3XZL=2v4.Q';
     $database = "covid";
@@ -44,7 +44,8 @@
             deaths10k_score, active10k, active10k_rank, active10k_score,
             recovered10k, recovered10k_rank, recovered10k_score, cases10k,
             cases10k_rank, cases10k_score, rank, score, population 
-            FROM latest_country_calculations");
+            FROM country_calculations 
+            WHERE `date` = (SELECT MAX(`date`) FROM country_calculations);");
         
         // get results from world query
         $stmt = $db_conn->prepare(CALCULATION_QUERY);
@@ -62,7 +63,7 @@
             $jsonEntry["country"] = $rows[$i]["country"];
             // set percent of world population
             $jsonEntry["pcOfWorldPopulation"] = 
-                    intval($rows[$i]["pc_population"]);
+                    floatval($rows[$i]["pc_population"]);
             // set percent of world mortality
             $jsonEntry["pcOfWorldMortality"] = 
                     floatval($rows[$i]["pc_mortality"]);

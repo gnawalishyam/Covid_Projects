@@ -739,7 +739,7 @@ public class CovidData {
     }
     
     /**
-     * Method to add statistiques countries to the database
+     * Method to add statistiques countries data to the database
      */
     public void getStatData() {
         // Declare variables
@@ -753,6 +753,11 @@ public class CovidData {
         if (lists != null) {
             conn = getDatabaseConnection();
             for(List<String> list : lists) {
+                if (conn == null) {
+                    conn = getDatabaseConnection();
+                    mResults.addResults("getStatData " + list.get(2) + 
+                            " reconnected");
+                }
                 // get country id
                 if (list.get(2) != null) {
                     id = databaseUtilities.selectStatCountryId(conn, 

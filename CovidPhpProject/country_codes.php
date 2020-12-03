@@ -23,8 +23,8 @@
  * THE SOFTWARE.
  */
 
-    // open connection to database
-    $servername = "550dae4.online-server.cloud";
+    // create connection string
+    $servername = "52d9225.online-server.cloud";
     $username = "web_php";
     $password = 'nz3Rp"3XZL=2v4.Q';
     $database = "covid";
