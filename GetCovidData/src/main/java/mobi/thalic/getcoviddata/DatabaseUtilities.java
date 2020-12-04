@@ -1060,7 +1060,7 @@ public class DatabaseUtilities {
             "INSERT INTO stat_totals (country_id, `date`, cases, deaths, "
                 + "`active`, recovered) VALUES (?, ?, ?, ?, ?, ?);";
         // declare variables
-        long recovered = 0, active;
+        long recovered = 0, active, cases, deaths;
         try {
             mDate = new java.sql.Date(simpleDateFormat.parse(list.get(0)).getTime());
         } catch (ParseException e) {
@@ -1076,13 +1076,13 @@ public class DatabaseUtilities {
             // add date parameter
             statement3.setDate(2, mDate);
             // add cases parameter
-            long cases = 0;
+            cases = 0;
             if (list.get(3) != null && !list.get(3).isEmpty()) {
                 cases = Long.parseLong(list.get(3));
             }
             statement3.setLong(3, cases);
             // add deaths parameter
-            long deaths = 0;
+            deaths = 0;
             if (list.get(4) != null && !list.get(4).isEmpty()) {
                 deaths = Long.parseLong(list.get(4));
             }
@@ -1109,7 +1109,7 @@ public class DatabaseUtilities {
             return;
         }
         if (countryId > 0 && active > 0) {
-            updateCountryTotal(conn, countryId, active, mDate);
+            updateCountryTotal(conn, countryId, active, cases, deaths, mDate);
         }
     }
     
@@ -1118,13 +1118,16 @@ public class DatabaseUtilities {
      * @param conn connection to the database
      * @param countryId of the country
      * @param active data
+     * @param cases data
+     * @param deaths data
      * @param date of the data
      */
     private void updateCountryTotal(Connection conn, int countryId, long active,
-            java.sql.Date date) {
+            long cases, long deaths, java.sql.Date date) {
         // Declare constants 
         final String UPDATE_COUNTRY_TOTAL_ACTIVE_SQL = "UPDATE country_totals "
-                + "SET active = ? WHERE country_id = ? AND `date` = ?;";
+                + "SET active = ?, cases = ?, deaths = ? "
+                + "WHERE country_id = ? AND `date` = ?;";
         
         if (checkCountryTotalActive(conn, countryId, date)) {
             try (
@@ -1133,10 +1136,14 @@ public class DatabaseUtilities {
                          conn.prepareStatement(UPDATE_COUNTRY_TOTAL_ACTIVE_SQL)) {
                 // add active parameter
                 statement.setLong(1, active);
+                // add cases parameter
+                statement.setLong(2, cases);
+                // add deaths parameter
+                statement.setLong(3, deaths);
                 // add country id parameter
-                statement.setInt(2, countryId);
+                statement.setInt(4, countryId);
                 // add date parameter
-                statement.setDate(3, date);
+                statement.setDate(5, date);
                 // execute statement
                 statement.execute();
                 // close statement
@@ -1696,7 +1703,7 @@ public class DatabaseUtilities {
                 + "deaths10k_rank, deaths10k_score, active10k, active10k_rank, "
                 + "active10k_score, recovered10k, recovered10k_rank, "
                 + "recovered10k_score, cases10k, cases10k_rank, cases10k_score, "
-                + "rank, score) "
+                + "`rank`, score) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
                 + "?, ?, ?, ?, ?, ?, ?);";
         try ( 

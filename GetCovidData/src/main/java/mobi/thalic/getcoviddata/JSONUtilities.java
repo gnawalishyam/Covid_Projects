@@ -53,9 +53,10 @@ public class JSONUtilities {
     
     /**
      * Method to process a statistiques json url
+     * @param yesterday date to process
      * @return a list of lists representation of the json
      */
-    public List<List<String>> processJsonArray () {
+    public List<List<String>> processJsonArray (String yesterday) {
         //declare variables
         JSONParser jsonParser = new JSONParser();
         List<List<String>> dataList = new ArrayList<>();
@@ -72,20 +73,22 @@ public class JSONUtilities {
                 List<String> data = new ArrayList<>();
                 JSONObject jsonData = (JSONObject) jsonArray.get(i);
                 String temp = (String) jsonData.get("date");
-                data.add(temp);
-                temp = (String) jsonData.get("code");
-                data.add(temp);
-                temp = (String) jsonData.get("nom");
-                data.add(temp);
-                temp = (String) jsonData.get("cas");
-                data.add(temp);
-                temp = (String) jsonData.get("deces");
-                data.add(temp);
-                temp = (String) jsonData.get("guerisons");
-                data.add(temp);
-                temp = (String) jsonData.get("source");
-                data.add(temp);
-                dataList.add(data);
+                if (temp.equals(yesterday)) {
+                    data.add(temp);
+                    temp = (String) jsonData.get("code");
+                    data.add(temp);
+                    temp = (String) jsonData.get("nom");
+                    data.add(temp);
+                    temp = (String) jsonData.get("cas");
+                    data.add(temp);
+                    temp = (String) jsonData.get("deces");
+                    data.add(temp);
+                    temp = (String) jsonData.get("guerisons");
+                    data.add(temp);
+                    temp = (String) jsonData.get("source");
+                    data.add(temp);
+                    dataList.add(data);
+                }
             }
             return dataList;
         } catch (FileNotFoundException e) {

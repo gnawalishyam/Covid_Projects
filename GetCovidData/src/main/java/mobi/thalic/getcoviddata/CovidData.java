@@ -749,7 +749,7 @@ public class CovidData {
         java.sql.Date maxDate = null, mDate = null;
         int countryId = 0, id;
         //lists = jsonUtilities.processJsonArrayFile("C:\\covid\\Files\\open_stats_coronavirus.json");
-        lists = jsonUtilities.processJsonArray(); 
+        lists = jsonUtilities.processJsonArray(simpleDateFormat.format(YESTERDAY_DATE)); 
         if (lists != null) {
             conn = getDatabaseConnection();
             for(List<String> list : lists) {
@@ -989,14 +989,12 @@ public class CovidData {
      * @return a string representation of yesterday's date
      */
     private String getYesterdaysDate () {
-        // create date formatter
-        DateTimeFormatter dateTimeFormatter = 
-                DateTimeFormatter.ofPattern("yyyy_MM_dd");
+        
         // get date
         LocalDateTime today = LocalDateTime.now();
         // remove one day
         LocalDateTime yesterday = today.minusDays(1);
-        return dateTimeFormatter.format(yesterday);
+        return simpleDateFormatAlt.format(yesterday);
     }
     
     /**
