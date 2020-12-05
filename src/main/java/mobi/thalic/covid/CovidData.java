@@ -12,8 +12,6 @@ import java.sql.Connection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,14 +25,15 @@ import java.util.Map;
  */
 public class CovidData {
     // Declare constants
-    private final java.sql.Date TODAY = getTodaysDate();
-    private final String YESTERDAY = getYesterdaysDate();
-    private final java.sql.Date YESTERDAY_DATE = getYesterday();
-    private final String PATH = "C:\\covid\\";
     private final SimpleDateFormat simpleDateFormat = 
             new SimpleDateFormat("yyyy-MM-dd");
     private final SimpleDateFormat simpleDateFormatAlt = 
             new SimpleDateFormat("yyyy_MM_dd");
+    private final java.sql.Date TODAY = getTodaysDate();
+    private final String YESTERDAY = getYesterdaysDate();
+    private final java.sql.Date YESTERDAY_DATE = getYesterday();
+    private final String PATH = "C:\\covid\\";
+    
     // Declare database variables
     private final HashMap<String, String> configMap = new HashMap<>();
     private final DatabaseUtilities databaseUtilities;
@@ -253,48 +252,39 @@ public class CovidData {
         // get mortality from database
         Map<String, Double> mortalityData = 
                 databaseUtilities.getMortalityData(conn, date);
-        // create population rank list
-        List<Long> populationRankList = createRanksLong(populationList);
-        // create cases10k rank list
-        List<Double> cases10kRankList = createRanksDouble(cases10kList);
-        // creat deaths10k rank list
-        List<Double> deaths10kRankList = createRanksDouble(deaths10kList);
-        // create active10k rank list
-        List<Double> active10kRankList = createRanksDouble(active10kList);
-        // create racovered10k rank list
-        List<Double> recovered10kRankList = 
-                createRanksDoubleDesc(recovered10kList);
+        // create medians
+        Map<String, Integer> medians = createMedians(populationList);
         // create population ranks
         Map<String, Integer> populationRanks = 
-                assignRanksLong(populationRankList, populationList);
+                assignRanksLong(populationList);
         // create cases10k ranks
         Map<String, Integer> cases10kRanks = 
-                assignRanksDouble(cases10kRankList, cases10kList);
+                assignRanksDouble(cases10kList);
         // create deaths10k ranks
         Map<String, Integer> deaths10kRanks = 
-                assignRanksDouble(deaths10kRankList, deaths10kList);
+                assignRanksDouble(deaths10kList);
         // create active10k ranks
         Map<String, Integer> active10kRanks = 
-                assignRanksDouble(active10kRankList, active10kList);
+                assignRanksDouble(active10kList);
         // create recovered10k ranks
         Map<String, Integer> recovered10kRanks = 
-                assignRanksDoubleDesc(recovered10kRankList, recovered10kList);
+                assignRanksDouble(recovered10kList);
         // create overall ranks
         Map<String, Integer> ranks = createOverallRanks(populationList, 
                 populationRanks, cases10kRanks, deaths10kRanks, active10kRanks, 
                 recovered10kRanks);
         // create cases10k scores
         Map<String, String> cases10kScores = 
-                createScores(cases10kRankList, cases10kList);
+                createScores(medians, cases10kList, cases10kRanks);
         // create deaths10k scores
         Map<String, String> deaths10kScores = 
-                createScores(deaths10kRankList, deaths10kList);
+                createScores(medians, deaths10kList, deaths10kRanks);
         // create active10k scores
         Map<String, String> active10kScores = 
-                createScores(active10kRankList, active10kList);
+                createScores(medians, active10kList, active10kRanks);
         // create recovered10k scores
         Map<String, String> recovered10kScores = 
-                createScores(recovered10kRankList, recovered10kList);
+                createScores(medians, recovered10kList, recovered10kRanks);
         // create overall scores
         Map<String, String> scores = getOverallScore(populationList, 
                 cases10kScores, deaths10kScores, active10kScores, 
@@ -516,60 +506,19 @@ public class CovidData {
     }
     
     /**
-     * Method to create ranks with long value in descending order
-     * @param list to create ranks of
-     * @return ranks
-     */
-    private List<Long> createRanksLong(List<CountryLong> list) {
-        // declare list of values
-        List<Long> longList = new ArrayList<>();
-        // get first rank plus one
-        long rank = list.get(0).getValue() + 1;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getValue() < rank) {
-                // assign new value to rank
-                rank = list.get(i).getValue();
-                longList.add(rank);
-            }
-        }
-        return longList;
-    }
-    
-    /**
      * Method to assign ranks of long values
-     * @param rankList to assign
      * @param list of values
      * @return assigned ranks
      */
-    private Map<String, Integer> assignRanksLong(List<Long> rankList, 
-            List<CountryLong> list) {
+    private Map<String, Integer> assignRanksLong(List<CountryLong> list) {
+        // Declare values;
+        int rank = 0;
+        long value = -1;
         Map<String, Integer> ranks = new HashMap<>();
         for(int i = 0; i < list.size(); i++) {
-            for (int j = 0; j < rankList.size(); j++) {
-                if (list.get(i).getValue() == rankList.get(j)) {
-                    ranks.put(list.get(i).getCountry(), j + 1);
-                    break;
-                }
-            }
-        }
-        return ranks;
-    }
-    
-    /**
-     * Method to assign ranks of double values ascending
-     * @param rankList to assign
-     * @param list of values
-     * @return ranks
-     */
-    private Map<String, Integer> assignRanksDouble(List<Double> rankList, 
-            List<CountryDouble> list) {
-        Map<String, Integer> ranks = new HashMap<>();
-        for(int i = 0; i < list.size(); i++) {
-            int rank = 0;
-            for (int j = 0; j < rankList.size(); j++) {
-                if (list.get(i).getValue() >= rankList.get(j)) {
-                    rank = j + 1;
-                }
+            if (list.get(i).getValue() != value) {
+                rank = i + 1;
+                value = list.get(i).getValue(); 
             }
             ranks.put(list.get(i).getCountry(), rank);
         }
@@ -577,54 +526,19 @@ public class CovidData {
     }
     
     /**
-     * Method to create ranks of double values ascending
-     * @param list of values
-     * @return ranks
-     */
-    private List<Double> createRanksDouble(List<CountryDouble> list) {
-        List<Double> doubleList = new ArrayList<>();
-        double rank = 0;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getValue() > rank) {
-                rank = list.get(i).getValue();
-                doubleList.add(rank);
-            }
-        }
-        return doubleList;
-    }
-    
-    /**
-     * Method Create ranks of double values in descending order
-     * @param list of values
-     * @return ranks
-     */
-    private List<Double> createRanksDoubleDesc(List<CountryDouble> list) {
-        List<Double> doubleList = new ArrayList<>();
-        double rank = list.get(0).getValue() + 1;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getValue() < rank) {
-                rank = list.get(i).getValue();
-                doubleList.add(rank);
-            }
-        }
-        return doubleList;
-    }
-    
-    /**
      * Method to assign ranks of double values ascending
-     * @param rankList to assign
      * @param list of values
      * @return ranks
      */
-    private Map<String, Integer> assignRanksDoubleDesc(List<Double> rankList, 
-            List<CountryDouble> list) {
+    private Map<String, Integer> assignRanksDouble(List<CountryDouble> list) {
+        // declare variables
+        int rank = 0;
+        double value = -1.0;
         Map<String, Integer> ranks = new HashMap<>();
         for(int i = 0; i < list.size(); i++) {
-            int rank = 0;
-            for (int j = 0; j < rankList.size(); j++) {
-                if (list.get(i).getValue() <= rankList.get(j)) {
-                    rank = j + 1;
-                }
+            if (list.get(i).getValue() != value) {
+                rank = i + 1;
+                value = list.get(i).getValue(); 
             }
             ranks.put(list.get(i).getCountry(), rank);
         }
@@ -632,18 +546,15 @@ public class CovidData {
     }
     
     /**
-     * Method to create scores
-     * @param rankList to use
-     * @param list of values
-     * @return scores
+     * Method to create median for the scores
+     * @param list to generate medians from
+     * @return Map of medians
      */
-    private Map<String, String> createScores(List<Double> rankList, 
-            List<CountryDouble> list) {
-        Map<String, String> scores = new HashMap<>();
+    private Map<String, Integer> createMedians(List<CountryLong> list) {
         Map<String, Integer> medians = new HashMap<>();
         // Get given ranks A+ and F
         medians.put("A+", 1);
-        medians.put("F", rankList.size());
+        medians.put("F", list.size());
         // calculate C+
         medians.put("C+", (medians.get("A+") + medians.get("F")) / 2);
         // calculate B+
@@ -671,9 +582,24 @@ public class CovidData {
         medians.put("D", (medians.get("D+") + medians.get("TD")) / 2);
         // calculate DM
         medians.put("D-", (medians.get("TD") + medians.get("F")) / 2);
+        return medians;
+    }
+    
+    /**
+     * Method to create scores
+     * @param rankList to use
+     * @param list of values
+     * @param rankMap to get the  rank
+     * @return scores
+     */
+    private Map<String, String> createScores(Map<String, Integer> medians, 
+            List<CountryDouble> list, Map<String, Integer> rankMap) {
+        Map<String, String> scores = new HashMap<>();
+        
         for (int i = 0; i < list.size(); i++) {
             scores.put(list.get(i).getCountry(), 
-                    getScore(medians, list.get(i).getValue(), rankList));
+                    getScore(medians, list.get(i).getValue(), 
+                            rankMap.get(list.get(i).getCountry())));
         }
         return scores;
     }
@@ -686,15 +612,9 @@ public class CovidData {
      * @return score
      */
     private String getScore(Map<String, Integer> medians, double value, 
-            List<Double> rankList) {
+            int rank) {
         String score;
-        int rank = 0;
-        for (int i = 0; i < rankList.size(); i++) {
-            if (rankList.get(i) == value) {
-                rank = i + 1;
-                break;
-            }
-        }
+        
         if (medians.get("A") > rank) {
             score = "A+";
         } else if(medians.get("A-") > rank) {
@@ -1013,9 +933,9 @@ public class CovidData {
     private String getYesterdaysDate () {
         
         // get date
-        LocalDateTime today = LocalDateTime.now();
-        // remove one day
-        LocalDateTime yesterday = today.minusDays(1);
+        LocalDate today = LocalDate.now().minusDays(1);
+        
+        java.sql.Date yesterday = java.sql.Date.valueOf(today);
         return simpleDateFormatAlt.format(yesterday);
     }
     
