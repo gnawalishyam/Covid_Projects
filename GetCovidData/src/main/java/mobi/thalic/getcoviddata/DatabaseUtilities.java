@@ -1129,7 +1129,7 @@ public class DatabaseUtilities {
                 + "SET active = ?, cases = ?, deaths = ? "
                 + "WHERE country_id = ? AND `date` = ?;";
         
-        if (checkCountryTotalActive(conn, countryId, date)) {
+        if (checkCountryUpdate(conn, countryId)) {
             try (
                 // statement to use to update country total active
                 PreparedStatement statement = 
@@ -1156,34 +1156,30 @@ public class DatabaseUtilities {
     }
     
     /**
-     * Method to check if country total active data exists
+     * Method to check if country should be updated
      * @param conn connection to the database
      * @param countryId of the country
      * @param date of the data
      * @return true if needs update false otherwise
      */
-    private boolean checkCountryTotalActive(Connection conn, int countryId, 
-            java.sql.Date date) {
+    private boolean checkCountryUpdate(Connection conn, int countryId) {
         // Declare constant 
-        final String CHECK_COUNTRY_TOTAL_ACTIVE_SQL = "SELECT EXISTS (SELECT id"
-                + " FROM country_totals WHERE country_id = ? AND `date` = ?"
-                + " AND active = 0);";
+        final String CHECK_COUNTRY_UPDATE_SQL = "SELECT `update`"
+                + " FROM stat_countries WHERE country_id = ?;";
         // declare variable
-        boolean doesExist = false;
+        boolean canUpdate = false;
         try (
             // statement to use to get stat country id
             PreparedStatement statement = 
-                     conn.prepareStatement(CHECK_COUNTRY_TOTAL_ACTIVE_SQL)) {
+                     conn.prepareStatement(CHECK_COUNTRY_UPDATE_SQL)) {
             // add stat id parameter
             statement.setInt(1, countryId);
-            // add date parameter
-            statement.setDate(2, date);
             try (
                 // run query and get results
                 ResultSet resultSet = statement.executeQuery()) {
                 // check if results
                 while (resultSet.next()) {
-                    doesExist = resultSet.getBoolean(1);
+                    canUpdate = resultSet.getBoolean(1);
                 }
                 // close results
                 resultSet.close();
@@ -1194,7 +1190,7 @@ public class DatabaseUtilities {
                     e.getMessage());
             return false;
         }
-        return doesExist;
+        return canUpdate;
     }
     
     /**
@@ -1425,12 +1421,12 @@ public class DatabaseUtilities {
             java.sql.Date date) {
         // Declare constant
         final String SELECT_CASES10K_COUNTRY_TOTALS_SQL = 
-                "SELECT display, (cases / population) * 10000 AS cases10k "
+                "SELECT display, FORMAT((cases / population) * 10000, 2, false) AS cases10k "
                 + "FROM country_totals INNER JOIN country_codes "
                 + "ON country_totals.country_id = country_codes.id "
                 + "WHERE `date` = ? "
                 + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                + "ORDER BY cases10k;";
+                + "ORDER BY (cases / population) * 10000;";
         // declare variable
         List<CountryDouble> cases10k = new ArrayList<>();
         try (
@@ -1471,12 +1467,12 @@ public class DatabaseUtilities {
             java.sql.Date date) {
         // Declare constant
         final String SELECT_DEATHS10K_COUNTRY_TOTALS_SQL = 
-                "SELECT display, (deaths / population) * 10000 AS deaths10k "
+                "SELECT display, FORMAT((deaths / population) * 10000, 2, false) AS deaths10k "
                 + "FROM country_totals INNER JOIN country_codes "
                 + "ON country_totals.country_id = country_codes.id "
                 + "WHERE `date` = ? "
                 + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                + "ORDER BY deaths10k;";
+                + "ORDER BY (deaths / population) * 10000;";
         // declare variable
         List<CountryDouble> deaths10k = new ArrayList<>();
         try (
@@ -1517,12 +1513,12 @@ public class DatabaseUtilities {
             java.sql.Date date) {
         // Declare constant
         final String SELECT_ACTIVE10K_COUNTRY_TOTALS_SQL = 
-                "SELECT display, (active / population) * 10000 AS active10k "
+                "SELECT display, FORMAT((active / population) * 10000, 2, false) AS active10k "
                 + "FROM country_totals INNER JOIN country_codes "
                 + "ON country_totals.country_id = country_codes.id "
                 + "WHERE `date` = ? "
                 + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                + "ORDER BY active10k;";
+                + "ORDER BY (active / population) * 10000;";
         // declare variable
         List<CountryDouble> active10k = new ArrayList<>();
         try (
@@ -1563,13 +1559,14 @@ public class DatabaseUtilities {
             java.sql.Date date) {
         // Declare constant
         final String SELECT_RECOVERED10K_COUNTRY_TOTALS_SQL = 
-                "SELECT display, ((cases - deaths - active) / population) "
-                + "* 10000 AS recovered10k "
+                "SELECT display, FORMAT(((cases - deaths - `active`) / "
+                + "population) * 10000, 2, false) AS recovered10k "
                 + "FROM country_totals INNER JOIN country_codes "
                 + "ON country_totals.country_id = country_codes.id "
                 + "WHERE `date` = ? "
                 + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                + "ORDER BY recovered10k DESC;";
+                + "ORDER BY ((cases - deaths - `active`) / population) * 10000 "
+                + "DESC;";
         // declare variable
         List<CountryDouble> recovered10k = new ArrayList<>();
         try (
@@ -1610,12 +1607,14 @@ public class DatabaseUtilities {
             java.sql.Date date) {
         // Declare constant
         final String SELECT_MORTALITY_COUNTRY_TOTALS_SQL = 
-                "SELECT display, (deaths / cases) * 100 AS mortality "
+                "SELECT display, FORMAT((deaths / (deaths + "
+                + "(cases - `active` - deaths))) * 100, 2, false) AS mortality "
                 + "FROM country_totals INNER JOIN country_codes "
                 + "ON country_totals.country_id = country_codes.id "
                 + "WHERE `date` = ? "
                 + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                + "ORDER BY mortality;";
+                + "ORDER BY (deaths / (deaths + (cases - `active` - deaths))) * "
+                + "100;";
         // declare variable
         Map<String, Double> mortality = new HashMap<>();
         try (

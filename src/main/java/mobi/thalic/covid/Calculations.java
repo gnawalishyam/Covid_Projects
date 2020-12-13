@@ -35,6 +35,7 @@ public class Calculations {
     private String cases10kScore;
     private int rank;
     private String score;
+    private double survivalRate;
     
     /**
      * Default Constructor
@@ -423,5 +424,21 @@ public class Calculations {
      */
     public void setScore(String score) {
         this.score = score;
+    }
+    
+    /**
+     * Getter for survival rate
+     * @return survival rate
+     */
+    public double getSurvivalRate() {
+        return survivalRate;
+    }
+    
+    /**
+     * Setter for survival rate
+     * @param survivalRate to set
+     */
+    public void setSurvivalRate(double survivalRate) {
+        this.survivalRate = survivalRate;
     }
 }

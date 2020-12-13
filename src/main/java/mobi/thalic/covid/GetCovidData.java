@@ -23,10 +23,10 @@ public class GetCovidData {
         //covidData.createStateDailies();
         //String result = covidData.createCountryDailies();
         //covidData.processWorldometerScrape();
-        //covidData.createCalculations();
+        covidData.createCalculations();
         //covidData.createCSVFile();
         //covidData.getStatData();
-        covidData.createCalculations();
+        //covidData.runCalculationsYesterday();
         //JSONUtilities.processJsonArray();
         System.out.println(results.getResults());
     }

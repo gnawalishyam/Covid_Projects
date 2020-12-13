@@ -43,7 +43,7 @@
             pc_total_cases, population_rank, deaths10k, deaths10k_rank,
             deaths10k_score, active10k, active10k_rank, active10k_score,
             recovered10k, recovered10k_rank, recovered10k_score, cases10k,
-            cases10k_rank, cases10k_score, rank, score, population 
+            cases10k_rank, cases10k_score, `rank`, score, population, survival_rate 
             FROM country_calculations 
             WHERE `date` = (SELECT MAX(`date`) FROM country_calculations);");
         
@@ -113,6 +113,7 @@
                     $rows[$i]["cases10k_score"];
             $jsonEntry["rank"] = intval($rows[$i]["rank"]);
             $jsonEntry["score"] = $rows[$i]["score"];
+            $jsonEntry["survivalRate"] = $rows[$i]["survival_rate"];
             // add entry to array
             $jsonArray[$i] = $jsonEntry;
         }

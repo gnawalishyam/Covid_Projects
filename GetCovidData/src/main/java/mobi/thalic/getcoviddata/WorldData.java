@@ -129,8 +129,9 @@ public class WorldData {
      * @return mortality
      */
     public double getMortality() {
-        if (cases > 0) {
-            return ((double) deaths / cases) * 100;
+        if ((deaths + getRecovered()) > 0) {
+            return ((double) deaths / (deaths + getRecovered())) * 
+                    100;
         }
         return 0;
     }

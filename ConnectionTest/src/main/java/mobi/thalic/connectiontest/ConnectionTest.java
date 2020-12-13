@@ -17,10 +17,10 @@ public class ConnectionTest {
     
     public static void main(String[] args)  {
         // Declare constants
-        final String CONNECTION_STRING = "jdbc:mysql://mysql.stackcp.com:54691/";
+        final String CONNECTION_STRING = "jdbc:mysql://localhost:3306/";
         final String USER_NAME = "java_program";
         final String USER_PASSWORD = "3peb3NnzY_2Md@*yGb";
-        final String USER_DATABASE = "havran-3135393c01";
+        final String USER_DATABASE = "covid";
         // Declare variables
         Connection conn = null;
         try {

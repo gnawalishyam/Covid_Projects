@@ -215,6 +215,21 @@ public class CovidData {
     }
     
     /**
+     * Method to create and add calculations to the database
+     */
+    public void runCalculationsYesterday() {
+        mResults.addResults("Starting run calculations yesterday!");
+        // get connection to the database
+        Connection conn = getDatabaseConnection();
+        
+        // calculate totals for yesterday
+        calculateTotal(conn, YESTERDAY_DATE);
+        // close database connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed run calculations yesterday!");
+    }
+    
+    /**
      * Method to create the data points for the front end
      * @param conn connection to the database
      * @param date of the data
@@ -252,8 +267,6 @@ public class CovidData {
         // get mortality from database
         Map<String, Double> mortalityData = 
                 databaseUtilities.getMortalityData(conn, date);
-        // create medians
-        Map<String, Integer> medians = createMedians(populationList);
         // create population ranks
         Map<String, Integer> populationRanks = 
                 assignRanksLong(populationList);
@@ -271,24 +284,30 @@ public class CovidData {
                 assignRanksDouble(recovered10kList);
         // create overall ranks
         Map<String, Integer> ranks = createOverallRanks(populationList, 
-                populationRanks, cases10kRanks, deaths10kRanks, active10kRanks, 
-                recovered10kRanks);
+                cases10kRanks, deaths10kRanks, active10kRanks);
+        // create case10k medians
+        Map<String, Double> cases10kMedians = createMediansAsc(cases10kList);
         // create cases10k scores
         Map<String, String> cases10kScores = 
-                createScores(medians, cases10kList, cases10kRanks);
+                createScoresAsc(cases10kMedians, cases10kList);
+        // create death10k medians
+        Map<String, Double> deaths10kMedians = createMediansAsc(deaths10kList);
         // create deaths10k scores
         Map<String, String> deaths10kScores = 
-                createScores(medians, deaths10kList, deaths10kRanks);
+                createScoresAsc(deaths10kMedians, deaths10kList);
+        // create active10k medians
+        Map<String, Double> active10kMedians = createMediansAsc(active10kList);
         // create active10k scores
         Map<String, String> active10kScores = 
-                createScores(medians, active10kList, active10kRanks);
+                createScoresAsc(active10kMedians, active10kList);
+        Map<String, Double> recovered10kMedians = 
+                createMediansDesc(recovered10kList);
         // create recovered10k scores
         Map<String, String> recovered10kScores = 
-                createScores(medians, recovered10kList, recovered10kRanks);
+                createScoresDesc(recovered10kMedians, recovered10kList);
         // create overall scores
         Map<String, String> scores = getOverallScore(populationList, 
-                cases10kScores, deaths10kScores, active10kScores, 
-                recovered10kScores);
+                cases10kScores, deaths10kScores, active10kScores);
         // create populations
         Map<String, Long> populationData = createDataLong(populationList);
         // create cases10k
@@ -314,20 +333,20 @@ public class CovidData {
             // set date of data
             calc.setDate(date);
             // set percent of world population
-            calc.setPercentPopulation(((double) population /
-                    worldData.getPopulation()) * 100);
+            calc.setPercentPopulation(calculatePercent(population, 
+                    worldData.getPopulation()));
             // set percent of world deaths
-            calc.setPercentDeaths(((double) deathsData.get(country) / 
-                    worldData.getDeaths()) * 100);
+            calc.setPercentDeaths(calculatePercent(deathsData.get(country), 
+                    worldData.getDeaths()));
             // set percent of world active cases
-            calc.setPercentActive(((double) activeData.get(country) / 
-                    worldData.getActive()) * 100);
+            calc.setPercentActive(calculatePercent(activeData.get(country), 
+                    worldData.getActive()));
             // set percent of recovered cases
-            calc.setPercentRecovered(((double) recoveredData.get(country) / 
-                    worldData.getRecovered()) * 100);
+            calc.setPercentRecovered(calculatePercent(recoveredData.get(country), 
+                    worldData.getRecovered()));
             // set percent of world total cases
-            calc.setPercentCases(((double) casesData.get(country) / 
-                    worldData.getCases()) * 100);
+            calc.setPercentCases(calculatePercent(casesData.get(country),  
+                    worldData.getCases()));
             // set percent of mortality
             calc.setPercentMortality(mortalityData.get(country));
             // set population
@@ -362,9 +381,42 @@ public class CovidData {
             calc.setRank(ranks.get(country));
             // set overall score
             calc.setScore(scores.get(country));
+            // set survival rate
+            calc.setSurvivalRate(calculatePercent(recoveredData.get(country), 
+                    recoveredData.get(country) + deathsData.get(country)));
             // add calculations to calculations list
             databaseUtilities.insertCalculation(conn, calc);
         }
+    }
+    
+    /**
+     * Method to calculate a percentage with 2 decimal places
+     * @param number1 dividend
+     * @param number2 divisor
+     * @return 
+     */
+    private double calculatePercent(long number1, long number2) {
+        // calculate percentage
+        double tempDouble = ((double) number1 / number2) * 100;
+        // convert to string
+        String tempString = String.format(Locale.getDefault(), "%.2f", tempDouble);
+        // convert string to double and return
+        Double tempDouble1 = Double.valueOf(tempString);
+        return tempDouble1;
+    }
+    
+    /**
+     * Method to calculate a percentage with 2 decimal places
+     * @param number1 dividend
+     * @param number2 divisor
+     * @return 
+     */
+    private double calculatePercent(double number) {
+        // convert to string
+        String tempString = String.format(Locale.getDefault(), "%.2f", number);
+        // convert string to double and return
+        Double tempDouble1 = Double.valueOf(tempString);
+        return tempDouble1;
     }
     
     /**
@@ -373,14 +425,11 @@ public class CovidData {
      * @param rank1 to add
      * @param rank2 to add
      * @param rank3 to add
-     * @param rank4 to add
-     * @param rank5 to add
      * @return overall ranks
      */
     private Map<String, Integer> createOverallRanks (List<CountryLong> list, 
             Map<String, Integer> rank1, Map<String, Integer> rank2, 
-            Map<String, Integer> rank3, Map<String, Integer> rank4, 
-            Map<String, Integer> rank5) {
+            Map<String, Integer> rank3) {
         // Declare country ranks map
         Map<String, Integer> countryRanks = new HashMap<>();
         // declare rank list
@@ -393,8 +442,7 @@ public class CovidData {
             String country = list.get(i).getCountry();
             // initialize and get all ranks
             int allRanks = rank1.get(country) + rank2.get(country) + 
-                    rank3.get(country) + rank4.get(country) + 
-                    rank5.get(country);
+                    rank3.get(country);
             rankData.put(country, allRanks);
             rankList.add(allRanks);
         }
@@ -417,19 +465,17 @@ public class CovidData {
      * @param score1 to add
      * @param score2 to add
      * @param score3 to add
-     * @param score4 to add
      * @return overall score
      */
     private Map<String, String> getOverallScore(List<CountryLong> list, 
             Map<String, String> score1, Map<String, String> score2, 
-            Map<String, String> score3, Map<String, String> score4) {
+            Map<String, String> score3) {
         Map<String, String> scores = new HashMap<>();
         for (int i = 0; i < list.size(); i++) {
               String country = list.get(i).getCountry();
               double score = (getScoreValue(score1.get(country)) + 
                       getScoreValue(score2.get(country)) + 
-                      getScoreValue(score3.get(country)) + 
-                      getScoreValue(score4.get(country))) / 4.0;
+                      getScoreValue(score3.get(country))) / 3.0;
               scores.put(country, getScore(score));
         }
         return scores;
@@ -547,59 +593,119 @@ public class CovidData {
     
     /**
      * Method to create median for the scores
-     * @param list to generate medians from
+     * @param list to generate medians from ascending
      * @return Map of medians
      */
-    private Map<String, Integer> createMedians(List<CountryLong> list) {
-        Map<String, Integer> medians = new HashMap<>();
+    private Map<String, Double> createMediansAsc(List<CountryDouble> list) {
+        Map<String, Double> medians = new HashMap<>();
         // Get given ranks A+ and F
-        medians.put("A+", 1);
-        medians.put("F", list.size());
-        // calculate C+
-        medians.put("C+", (medians.get("A+") + medians.get("F")) / 2);
-        // calculate B+
-        medians.put("B+", (medians.get("A+") + medians.get("C+")) / 2);
-        // calculate D+
-        medians.put("D+", (medians.get("C+") + medians.get("F")) / 2);
-        // calculate temporary medians TA, TB, TC, TD
-        medians.put("TA", (medians.get("A+") + medians.get("B+")) / 2);
-        medians.put("TB", (medians.get("B+") + medians.get("C+")) / 2);
-        medians.put("TC", (medians.get("C+") + medians.get("D+")) / 2);
-        medians.put("TD", (medians.get("D+") + medians.get("F")) / 2);
+        double step = (list.get(list.size() - 1).getValue() - 
+                list.get(0).getValue()) / 13;
+        double current = calculatePercent(list.get(0).getValue());
+        medians.put("A+", current);
         // calculate A
-        medians.put("A", (medians.get("A+") + medians.get("TA")) / 2);
-        // calculate AM
-        medians.put("A-", (medians.get("TA") + medians.get("B+")) / 2);
+        current = calculatePercent(current + step);
+        medians.put("A", current);
+        // calculate A-
+        current = calculatePercent(current + step);
+        medians.put("A-", current);
+        // calculate B+
+        current = calculatePercent(current + step);
+        medians.put("B+", current);
         // calculate B
-        medians.put("B", (medians.get("B+") + medians.get("TB")) / 2);
-        // calculate BM
-        medians.put("B-", (medians.get("TB") + medians.get("C+")) / 2);
+        current = calculatePercent(current + step);
+        medians.put("B", current);
+        // calculate B-
+        current = calculatePercent(current + step);
+        medians.put("B-", current);
+        // calculate C+
+        current = calculatePercent(current + step);
+        medians.put("C+", current);
         // calculate C
-        medians.put("C", (medians.get("C+") + medians.get("TC")) / 2);
-        // calculate CM
-        medians.put("C-", (medians.get("TC") + medians.get("D+")) / 2);
+        current = calculatePercent(current + step);
+        medians.put("C", current);
+        // calculate C-
+        current = calculatePercent(current + step);
+        medians.put("C-", current);
+        // calculate D+
+        current = calculatePercent(current + step);
+        medians.put("D+", current);
         // calculate D
-        medians.put("D", (medians.get("D+") + medians.get("TD")) / 2);
-        // calculate DM
-        medians.put("D-", (medians.get("TD") + medians.get("F")) / 2);
+        current = calculatePercent(current + step);
+        medians.put("D", current);
+        // calculate D-
+        current = calculatePercent(current + step);
+        medians.put("D-", current);
+        // calculate F
+        current = calculatePercent(current + step);
+        medians.put("F", current);
+        return medians;
+    }
+    
+    /**
+     * Method to create median for the scores
+     * @param list to generate medians from descending
+     * @return Map of medians
+     */
+    private Map<String, Double> createMediansDesc(List<CountryDouble> list) {
+        Map<String, Double> medians = new HashMap<>();
+        // Get given ranks A+ and F
+        double step = (list.get(0).getValue() - 
+                list.get(list.size() - 1).getValue()) / 13;
+        double current = calculatePercent(list.get(0).getValue());
+        medians.put("A+", current);
+        // calculate A
+        current = calculatePercent(current - step);
+        medians.put("A", current);
+        // calculate A-
+        current = calculatePercent(current - step);
+        medians.put("A-", current);
+        // calculate B+
+        current = calculatePercent(current - step);
+        medians.put("B+", current);
+        // calculate B
+        current = calculatePercent(current - step);
+        medians.put("B", current);
+        // calculate B-
+        current = calculatePercent(current - step);
+        medians.put("B-", current);
+        // calculate C+
+        current = calculatePercent(current - step);
+        medians.put("C+", current);
+        // calculate C
+        current = calculatePercent(current - step);
+        medians.put("C", current);
+        // calculate C-
+        current = calculatePercent(current - step);
+        medians.put("C-", current);
+        // calculate D+
+        current = calculatePercent(current - step);
+        medians.put("D+", current);
+        // calculate D
+        current = calculatePercent(current - step);
+        medians.put("D", current);
+        // calculate D-
+        current = calculatePercent(current - step);
+        medians.put("D-", current);
+        // calculate F
+        current = calculatePercent(current - step);
+        medians.put("F", current);
         return medians;
     }
     
     /**
      * Method to create scores
-     * @param rankList to use
+     * @param medians to use
      * @param list of values
-     * @param rankMap to get the  rank
      * @return scores
      */
-    private Map<String, String> createScores(Map<String, Integer> medians, 
-            List<CountryDouble> list, Map<String, Integer> rankMap) {
+    private Map<String, String> createScoresAsc(Map<String, Double> medians, 
+            List<CountryDouble> list) {
         Map<String, String> scores = new HashMap<>();
         
         for (int i = 0; i < list.size(); i++) {
             scores.put(list.get(i).getCountry(), 
-                    getScore(medians, list.get(i).getValue(), 
-                            rankMap.get(list.get(i).getCountry())));
+                    getScoreAsc(medians, list.get(i).getValue()));
         }
         return scores;
     }
@@ -608,36 +714,90 @@ public class CovidData {
      * Method to get a score
      * @param medians to use to find score
      * @param value to get score for
-     * @param rankList to use to find score
      * @return score
      */
-    private String getScore(Map<String, Integer> medians, double value, 
-            int rank) {
+    private String getScoreAsc(Map<String, Double> medians, double value) {
         String score;
         
-        if (medians.get("A") > rank) {
+        if (medians.get("A") > value) {
             score = "A+";
-        } else if(medians.get("A-") > rank) {
+        } else if(medians.get("A-") > value) {
             score = "A";
-        } else if(medians.get("B+") > rank) {
+        } else if(medians.get("B+") > value) {
             score = "A-";
-        } else if(medians.get("B") > rank) {
+        } else if(medians.get("B") > value) {
             score = "B+";
-        } else if(medians.get("B-") > rank) {
+        } else if(medians.get("B-") > value) {
             score = "B";
-        } else if(medians.get("C+") > rank) {
+        } else if(medians.get("C+") > value) {
             score = "B-";
-        } else if(medians.get("C") > rank) {
+        } else if(medians.get("C") > value) {
             score = "C+";
-        } else if(medians.get("C-") > rank) {
+        } else if(medians.get("C-") > value) {
             score = "C";
-        } else if(medians.get("D+") > rank) {
+        } else if(medians.get("D+") > value) {
             score = "C-";
-        } else if(medians.get("D") > rank) {
+        } else if(medians.get("D") > value) {
             score = "D+";
-        } else if(medians.get("D-") > rank) {
+        } else if(medians.get("D-") > value) {
             score = "D";
-        } else if(medians.get("F") > rank) {
+        } else if(medians.get("F") > value) {
+            score = "D-";
+        } else {
+            score = "F";
+        }
+        return score;
+    }
+    
+    /**
+     * Method to create scores
+     * @param medians to use
+     * @param list of values
+     * @return scores
+     */
+    private Map<String, String> createScoresDesc(Map<String, Double> medians, 
+            List<CountryDouble> list) {
+        Map<String, String> scores = new HashMap<>();
+        
+        for (int i = 0; i < list.size(); i++) {
+            scores.put(list.get(i).getCountry(), 
+                    getScoreDesc(medians, list.get(i).getValue()));
+        }
+        return scores;
+    }
+    
+    /**
+     * Method to get a score
+     * @param medians to use to find score
+     * @param value to get score for
+     * @return score
+     */
+    private String getScoreDesc(Map<String, Double> medians, double value) {
+        String score;
+        
+        if (medians.get("A") < value) {
+            score = "A+";
+        } else if(medians.get("A-") < value) {
+            score = "A";
+        } else if(medians.get("B+") < value) {
+            score = "A-";
+        } else if(medians.get("B") < value) {
+            score = "B+";
+        } else if(medians.get("B-") < value) {
+            score = "B";
+        } else if(medians.get("C+") < value) {
+            score = "B-";
+        } else if(medians.get("C") < value) {
+            score = "C+";
+        } else if(medians.get("C-") < value) {
+            score = "C";
+        } else if(medians.get("D+") < value) {
+            score = "C-";
+        } else if(medians.get("D") < value) {
+            score = "D+";
+        } else if(medians.get("D-") < value) {
+            score = "D";
+        } else if(medians.get("F") < value) {
             score = "D-";
         } else {
             score = "F";
