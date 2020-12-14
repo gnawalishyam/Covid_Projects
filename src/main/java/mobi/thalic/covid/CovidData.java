@@ -282,9 +282,6 @@ public class CovidData {
         // create recovered10k ranks
         Map<String, Integer> recovered10kRanks = 
                 assignRanksDouble(recovered10kList);
-        // create overall ranks
-        Map<String, Integer> ranks = createOverallRanks(populationList, 
-                cases10kRanks, deaths10kRanks, active10kRanks);
         // create case10k medians
         Map<String, Double> cases10kMedians = createMediansAsc(cases10kList);
         // create cases10k scores
@@ -300,14 +297,26 @@ public class CovidData {
         // create active10k scores
         Map<String, String> active10kScores = 
                 createScoresAsc(active10kMedians, active10kList);
+        // create recovered10k medians
         Map<String, Double> recovered10kMedians = 
                 createMediansDesc(recovered10kList);
         // create recovered10k scores
         Map<String, String> recovered10kScores = 
                 createScoresDesc(recovered10kMedians, recovered10kList);
         // create overall scores
-        Map<String, String> scores = getOverallScore(populationList, 
-                cases10kScores, deaths10kScores, active10kScores);
+        List<CountryDouble> overallScoresList = 
+                createOverallScores(populationList, cases10kScores, 
+                        deaths10kScores, active10kScores);
+        // create overall score ranks
+        // create recovered10k ranks
+        Map<String, Integer> overallScoresRanks = 
+                assignRanksDouble(overallScoresList);
+        // create overall scores medians
+        Map<String, Double> overallScoresMedians = 
+                createMediansDesc(overallScoresList);
+        // create overall scores
+        Map<String, String> overallScores = 
+                createScoresDesc(overallScoresMedians, overallScoresList);
         // create populations
         Map<String, Long> populationData = createDataLong(populationList);
         // create cases10k
@@ -378,9 +387,9 @@ public class CovidData {
             // set total casres per 10,000 population score
             calc.setCases10kScore(cases10kScores.get(country));
             // set overall rank
-            calc.setRank(ranks.get(country));
+            calc.setRank(overallScoresRanks.get(country));
             // set overall score
-            calc.setScore(scores.get(country));
+            calc.setScore(overallScores.get(country));
             // set survival rate
             calc.setSurvivalRate(calculatePercent(recoveredData.get(country), 
                     recoveredData.get(country) + deathsData.get(country)));
@@ -460,25 +469,55 @@ public class CovidData {
     }
     
     /**
-     * Method to get overall score
-     * @param list to use
-     * @param score1 to add
-     * @param score2 to add
-     * @param score3 to add
-     * @return overall score
+     * Method to create overall score and return in descending sorted country 
+     * double list
+     * @param list with countries to iterate through
+     * @param score1 to use to create overall score
+     * @param score2 to use to create overall score
+     * @param score3 to use to create overall score
+     * @return sorted country scores list
      */
-    private Map<String, String> getOverallScore(List<CountryLong> list, 
+    private List<CountryDouble> createOverallScores(List<CountryLong> list, 
             Map<String, String> score1, Map<String, String> score2, 
             Map<String, String> score3) {
-        Map<String, String> scores = new HashMap<>();
+        // declare variables
+        List<CountryDouble> countryScoresList = new ArrayList<>();
+        Map<String, Double> scoresMap = new HashMap<>();
+        List<Double> scoresList = new ArrayList<>();
+        // loop through countries
         for (int i = 0; i < list.size(); i++) {
+            // get country
               String country = list.get(i).getCountry();
-              double score = (getScoreValue(score1.get(country)) + 
+              // calculate overall score
+              double score = calculatePercent((getScoreValue(score1.get(country)) + 
                       getScoreValue(score2.get(country)) + 
-                      getScoreValue(score3.get(country))) / 3.0;
-              scores.put(country, getScore(score));
+                      getScoreValue(score3.get(country))) / 3.0);
+              // put country and overall score in map
+              scoresMap.put(country, score);
+              // put score in list to be reordered
+              scoresList.add(score);
         }
-        return scores;
+        Collections.sort(scoresList);
+        // get  value higher than highest score
+        double score = scoresList.get(scoresList.size() - 1) + 1;
+        // loop through sorted score list in reverse order
+        for(int i = scoresList.size() - 1; i >= 0; i--) {
+            if (score == scoresList.get(i)) {
+                continue;
+            } else {
+                score = scoresList.get(i);
+                // find all matching scores
+                for (Map.Entry<String, Double> entry : scoresMap.entrySet()) {
+                    if (entry.getValue() == score) {
+                        // add entry to country scores list
+                        countryScoresList.add(new CountryDouble(entry.getKey(), 
+                                entry.getValue()));
+                    }
+                }
+            }
+        }
+        // return sorted country scores list
+        return countryScoresList;
     }
      
     /**
