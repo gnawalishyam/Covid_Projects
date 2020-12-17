@@ -1,7 +1,25 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * The MIT License
+ *
+ * Copyright 2020 Gary Larson gary@thalic.mobi.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package mobi.thalic.covid;
 
@@ -36,6 +54,11 @@ public class Calculations {
     private int rank;
     private String score;
     private double survivalRate;
+    private double activePercent;
+    private double recoveredPercent;
+    private int recoveredPercentRank;
+    private String recoveredPercentScore;
+    
     
     /**
      * Default Constructor
@@ -440,5 +463,69 @@ public class Calculations {
      */
     public void setSurvivalRate(double survivalRate) {
         this.survivalRate = survivalRate;
+    }
+    
+    /**
+     * Getter for active percent
+     * @return active percent
+     */
+    public double getActivePercent() {
+        return activePercent;
+    }
+    
+    /**
+     * Setter for active percent
+     * @param activePercent to set
+     */
+    public void setActivePercent(double activePercent) {
+        this.activePercent = activePercent;
+    }
+    
+    /**
+     * Getter for recovered percent
+     * @return recovered percent
+     */
+    public double getRecoveredPercent() {
+        return recoveredPercent;
+    }
+    
+    /**
+     * Setter for recovered percent
+     * @param recoveredPercent to set
+     */
+    public void setRecoveredPercent(double recoveredPercent) {
+        this.recoveredPercent = recoveredPercent;
+    }
+    
+    /**
+     * Getter for recovered percent rank
+     * @return recovered percent rank
+     */
+    public int getRecoveredPercentRank() {
+        return recoveredPercentRank;
+    }
+    
+    /**
+     * Setter for recovered percent rank
+     * @param rank  to set
+     */
+    public void setRecoveredPercentRank(int rank) {
+        this.recoveredPercentRank = rank;
+    }
+    
+    /**
+     * Getter for recovered percent score
+     * @return recovered percent score
+     */
+    public String getRecoveredPercentScore() {
+        return recoveredPercentScore;
+    }
+    
+    /**
+     * Setter for recovered percent score
+     * @param score to set
+     */
+    public void setRecoveredPercentScore(String score) {
+        this.recoveredPercentScore = score;
     }
 }

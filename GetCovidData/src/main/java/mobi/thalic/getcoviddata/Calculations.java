@@ -54,6 +54,11 @@ public class Calculations {
     private int rank;
     private String score;
     private double survivalRate;
+    private double activePercent;
+    private double recoveredPercent;
+    private int recoveredPercentRank;
+    private String recoveredPercentScore;
+    
     
     /**
      * Default Constructor
@@ -458,5 +463,69 @@ public class Calculations {
      */
     public void setSurvivalRate(double survivalRate) {
         this.survivalRate = survivalRate;
+    }
+    
+    /**
+     * Getter for active percent
+     * @return active percent
+     */
+    public double getActivePercent() {
+        return activePercent;
+    }
+    
+    /**
+     * Setter for active percent
+     * @param activePercent to set
+     */
+    public void setActivePercent(double activePercent) {
+        this.activePercent = activePercent;
+    }
+    
+    /**
+     * Getter for recovered percent
+     * @return recovered percent
+     */
+    public double getRecoveredPercent() {
+        return recoveredPercent;
+    }
+    
+    /**
+     * Setter for recovered percent
+     * @param recoveredPercent to set
+     */
+    public void setRecoveredPercent(double recoveredPercent) {
+        this.recoveredPercent = recoveredPercent;
+    }
+    
+    /**
+     * Getter for recovered percent rank
+     * @return recovered percent rank
+     */
+    public int getRecoveredPercentRank() {
+        return recoveredPercentRank;
+    }
+    
+    /**
+     * Setter for recovered percent rank
+     * @param rank  to set
+     */
+    public void setRecoveredPercentRank(int rank) {
+        this.recoveredPercentRank = rank;
+    }
+    
+    /**
+     * Getter for recovered percent score
+     * @return recovered percent score
+     */
+    public String getRecoveredPercentScore() {
+        return recoveredPercentScore;
+    }
+    
+    /**
+     * Setter for recovered percent score
+     * @param score to set
+     */
+    public void setRecoveredPercentScore(String score) {
+        this.recoveredPercentScore = score;
     }
 }
