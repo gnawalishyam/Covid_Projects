@@ -211,6 +211,27 @@ public class CovidData {
     }
     
     /**
+     * Method to create and add calculations to the database
+     */
+    public void runCalculations(String date) {
+        mResults.addResults("Starting run calculations!");
+        // get connection to the database
+        Connection conn = getDatabaseConnection();
+        // convert date string to date
+        try {
+            java.util.Date parsedate = simpleDateFormat.parse(date);
+            java.sql.Date sql = new java.sql.Date(parsedate.getTime());
+            // calculate totals for yesterday
+            calculateTotal(conn, sql);
+        } catch(ParseException e) {
+            System.out.println(e);
+        }
+        // close database connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed run calculations!");
+    }
+    
+    /**
      * Method to create the data points for the front end
      * @param conn connection to the database
      * @param date of the data
