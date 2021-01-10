@@ -1,27 +1,9 @@
 /*
- * The MIT License
- *
- * Copyright 2020 Gary Larson <gary@thalic.mobi>.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
-package mobi.thalic.getcoviddata;
+package mobi.thalic.covid;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -38,8 +20,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Class that deals with Covid data
- * @author Gary Larson gary@thalic.mobi
+ *
+ * @author GaryL
  */
 public class CovidData {
     // Declare constants
@@ -52,9 +34,11 @@ public class CovidData {
     private final java.sql.Date YESTERDAY_DATE = getYesterday();
     private final String PATH = "C:\\covid\\";
     
-    // Declare configuration options
+    // Declare database variables
+    
     private final DatabaseUtilities databaseUtilities;
     private final JSONUtilities jsonUtilities;
+    private final CSVUtilities csvUtilities;
     private final Results mResults;
     
     /**
@@ -65,104 +49,150 @@ public class CovidData {
         mResults = results;
         databaseUtilities = new DatabaseUtilities(mResults);
         jsonUtilities = new JSONUtilities(mResults);
+        csvUtilities = new CSVUtilities(mResults);
     }
     
-    /**
-     * Method to get today's date
-     * @return a string representation of yesterday's date
-     */
-    private java.sql.Date getTodaysDate () {
-        // get date
-        java.util.Date date = new java.util.Date();
-        java.sql.Date today = new java.sql.Date(date.getTime());
-        return today;
-    }
     
-    /**
-     * Method to process world-o-meter scrape to enter data into a database
+    
+    /**\
+     * Method to create a csv file of the latest totals
      */
-    public void processWorldometerScrape(){
-        mResults.addResults("Starting World o meter scrape");
-        // declare and initialize variable
+    public void createCSVFile() {
         Connection conn = getDatabaseConnection();
-        
-        mResults.addResults(" United States Results");
-        processUnitedStatesScrape(conn);
-        mResults.addResults("\n\n World Results");
-        processWorldScrape(conn);
-        mResults.addResults("Completed World o meter scrape");
-        // close connection
-        databaseUtilities.closeConnection(conn);
-        mResults.addResults("\n\n Get Stat Totals");
-        getStatData();
-        mResults.addResults("Completed Stat Totals");
-        mResults.addResults("\n\n Calculate Totals");
-        // declare and initialize variable
-        conn = getDatabaseConnection();
-        calculateTotal(conn, YESTERDAY_DATE);
-        // close connection
-        databaseUtilities.closeConnection(conn);
-        mResults.addResults("Completed Calaulate Totals");
+        List<List<String>> lists = databaseUtilities.getLatestCountryTotals(
+                conn, YESTERDAY_DATE);
+        csvUtilities.writeCSVFile(lists, PATH + "world_covid_" + YESTERDAY + 
+                ".csv");
     }
     
     /**
-     * Method to scrape and process United States data
-     * @param conn to database
-     * @return results of WorldOMeter scrapes
+     * Method to write World totals to the database
+     * @param conn to the database
+     * @param lists of data to process
      */
-    private void processUnitedStatesScrape (Connection conn) {
-        // Declare constants
-        final String WORLDOMETER_US = 
-                "https://www.worldometers.info/coronavirus/country/us/";
-        final String US_BASE_NAME = "us_covid_";
-        
-        // scrape WorldOMeter for United States Table
-        ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
-        List<List<String>> unitedStatesStrings = 
-                scrapeUtilities.getTableData(WORLDOMETER_US);
-        
-        // process united states covid data and put in csv file
-        if (unitedStatesStrings != null) {
-            // modify raw US strings and add population
-            unitedStatesStrings = createUnitedStatesStrings(conn, 
-                    unitedStatesStrings);
-            // add date
-            unitedStatesStrings = addYesterday(unitedStatesStrings);
-            // write to database
-            writeUSToDatabase(conn, unitedStatesStrings);
-            mResults.addResults(
-                    "Successfully acquired United States covid data");
-        } else {
-            mResults.addResults("No US data");
+    private void writeWorldToDatabase(Connection conn, 
+            List<List<String>> lists) {
+        // insert data in total table in database
+        for(int i = 1; i < lists.size(); i++) {
+            databaseUtilities.insertWorldTotal(conn, lists.get(i));
         }
     }
     
     /**
-     * Method to scrape and process World data
-     * @param conn to database
+     * Method to update population
+     * @param conn to the database
+     * @param country either World or UnitedStates
+     * @param lists to update
+     */
+    private void updatePopulation(Connection conn, String country, 
+            List<List<String>> lists) {
+        long adjustment;
+       
+        for (int i = 1; i < lists.size(); i++) {
+            long population = convertPopulation(lists.get(i).get(4));
+            String place = lists.get(i).get(0);
+            if (country.equals("UnitedStates")) {
+                long statePopulation = databaseUtilities
+                        .selectStatePopulation(conn, place);
+                if (statePopulation == 0) {
+                    databaseUtilities.insertStatePopulation(conn, place, 
+                            population);
+                } else {
+                adjustment = statePopulation / 10;
+                    if (statePopulation > population - adjustment && 
+                            statePopulation < population + adjustment && 
+                            population != statePopulation) {
+                        databaseUtilities.updateStatePopulation(conn, place, 
+                                population);
+                    }
+                }
+            } else {
+                long countryPopulation = databaseUtilities
+                        .selectWorldPopulation(conn, place);
+                if (countryPopulation == 0 && population != 0) {
+                    if (databaseUtilities.selectCountryId(conn, place) != 0) {
+                        databaseUtilities.insertWorldPopulation(conn, place, 
+                                population);
+                    }
+                } else {
+                    adjustment = countryPopulation / 10;
+                    if (countryPopulation > population - adjustment && 
+                            countryPopulation < population + adjustment && 
+                            countryPopulation != population) {
+                        databaseUtilities.updateWorldPopulation(conn, place, 
+                                population);
+                        if (place.equals("USA")) {
+                            databaseUtilities.updateStatePopulation(conn, 
+                                    "USA Total", population);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Method to test the database
+     */
+    public void testDatabase(){
+        Connection conn = getDatabaseConnection();
+        long population = databaseUtilities.selectStatePopulation(conn, 
+                                "USA Total");
+        mResults.addResults(String.format(Locale.getDefault(), 
+                "USA Total population = %,d", population));
+        // close connection
+        databaseUtilities.closeConnection(conn);        
+    }
+    
+    /**
+     * Method to write US totals to the database
+     * @param conn to the database
+     * @param lists of data to process
      * @return results
      */
-    private void processWorldScrape(Connection conn) {
-        // Declare constants
-        final String WORLDOMETER_ALL = 
-                "https://www.worldometers.info/coronavirus/";
-        final String WORLD_BASE_NAME = "world_covid_";
+    private void writeUSToDatabase(Connection conn, 
+            List<List<String>> lists) {
+        for (int i = 1; i < lists.size(); i++) {
+            if (!lists.get(i).get(0).equals("Total:")) {
+                // insert data in total table in database
+                databaseUtilities.insertUSTotal(conn, lists.get(i));
+            }
+        } 
+    }
+    
+    /**
+     * Method to create and add calculations to the database
+     */
+    public void createCalculations() {
+        mResults.addResults("Starting create calculations!");
+        // get connection to the database
+        Connection conn = getDatabaseConnection();
+        // get dates of all totals
+        List<java.sql.Date> dates = 
+                databaseUtilities.getCountryTotalsDates(conn);
+        // loop through dates
+        dates.forEach(date -> {
+            // calculate totals for this date
+            calculateTotal(conn, date);
+        });
+        // close database connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed create calculations!");
+    }
+    
+    /**
+     * Method to create and add calculations to the database
+     */
+    public void runCalculationsYesterday() {
+        mResults.addResults("Starting run calculations yesterday!");
+        // get connection to the database
+        Connection conn = getDatabaseConnection();
         
-        // Scrape world table
-        ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
-        List<List<String>> worldStrings = 
-                scrapeUtilities.getTableData(WORLDOMETER_ALL);
-        // process world covid data and put in csv file
-        if (worldStrings != null) {
-            // modify raw world covid data
-            worldStrings = createWorldStrings(conn, worldStrings);
-            // add date
-            worldStrings = addYesterday(worldStrings);
-            // write to database
-            writeWorldToDatabase(conn, worldStrings);
-            mResults.addResults( 
-                    "Successfully acquired world covid data");
-        }
+        // calculate totals for yesterday
+        calculateTotal(conn, YESTERDAY_DATE);
+        // close database connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed run calculations yesterday!");
     }
     
     /**
@@ -531,6 +561,46 @@ public class CovidData {
     }
     
     /**
+     * Method to assign ranks of long values
+     * @param list of values
+     * @return assigned ranks
+     */
+    private Map<String, Integer> assignRanksLong(List<CountryLong> list) {
+        // Declare values;
+        int rank = 0;
+        long value = -1;
+        Map<String, Integer> ranks = new HashMap<>();
+        for(int i = 0; i < list.size(); i++) {
+            if (list.get(i).getValue() != value) {
+                rank = i + 1;
+                value = list.get(i).getValue(); 
+            }
+            ranks.put(list.get(i).getCountry(), rank);
+        }
+        return ranks;
+    }
+    
+    /**
+     * Method to assign ranks of double values ascending
+     * @param list of values
+     * @return ranks
+     */
+    private Map<String, Integer> assignRanksDouble(List<CountryDouble> list) {
+        // declare variables
+        int rank = 0;
+        double value = -1.0;
+        Map<String, Integer> ranks = new HashMap<>();
+        for(int i = 0; i < list.size(); i++) {
+            if (list.get(i).getValue() != value) {
+                rank = i + 1;
+                value = list.get(i).getValue(); 
+            }
+            ranks.put(list.get(i).getCountry(), rank);
+        }
+        return ranks;
+    }
+    
+    /**
      * Method to create median for the scores
      * @param list to generate medians from ascending
      * @return Map of medians
@@ -633,46 +703,6 @@ public class CovidData {
     }
     
     /**
-     * Method to assign ranks of long values
-     * @param list of values
-     * @return assigned ranks
-     */
-    private Map<String, Integer> assignRanksLong(List<CountryLong> list) {
-        // Declare values;
-        int rank = 0;
-        long value = -1;
-        Map<String, Integer> ranks = new HashMap<>();
-        for(int i = 0; i < list.size(); i++) {
-            if (list.get(i).getValue() != value) {
-                rank = i + 1;
-                value = list.get(i).getValue(); 
-            }
-            ranks.put(list.get(i).getCountry(), rank);
-        }
-        return ranks;
-    }
-    
-    /**
-     * Method to assign ranks of double values ascending
-     * @param list of values
-     * @return ranks
-     */
-    private Map<String, Integer> assignRanksDouble(List<CountryDouble> list) {
-        // declare variables
-        int rank = 0;
-        double value = -1.0;
-        Map<String, Integer> ranks = new HashMap<>();
-        for(int i = 0; i < list.size(); i++) {
-            if (list.get(i).getValue() != value) {
-                rank = i + 1;
-                value = list.get(i).getValue(); 
-            }
-            ranks.put(list.get(i).getCountry(), rank);
-        }
-        return ranks;
-    }
-    
-    /**
      * Method to create scores
      * @param medians to use
      * @param list of values
@@ -685,23 +715,6 @@ public class CovidData {
         for (int i = 0; i < list.size(); i++) {
             scores.put(list.get(i).getCountry(), 
                     getScoreAsc(medians, list.get(i).getValue()));
-        }
-        return scores;
-    }
-    
-    /**
-     * Method to create scores
-     * @param medians to use
-     * @param list of values
-     * @return scores
-     */
-    private Map<String, String> createScoresDesc(Map<String, Double> medians, 
-            List<CountryDouble> list) {
-        Map<String, String> scores = new HashMap<>();
-        
-        for (int i = 0; i < list.size(); i++) {
-            scores.put(list.get(i).getCountry(), 
-                    getScoreDesc(medians, list.get(i).getValue()));
         }
         return scores;
     }
@@ -743,6 +756,23 @@ public class CovidData {
             score = "F";
         }
         return score;
+    }
+    
+    /**
+     * Method to create scores
+     * @param medians to use
+     * @param list of values
+     * @return scores
+     */
+    private Map<String, String> createScoresDesc(Map<String, Double> medians, 
+            List<CountryDouble> list) {
+        Map<String, String> scores = new HashMap<>();
+        
+        for (int i = 0; i < list.size(); i++) {
+            scores.put(list.get(i).getCountry(), 
+                    getScoreDesc(medians, list.get(i).getValue()));
+        }
+        return scores;
     }
     
     /**
@@ -811,6 +841,99 @@ public class CovidData {
     }
     
     /**
+     * Method to create state dailies
+     */
+    public void createStateDailies() {
+        // declare and initialize variable
+        Connection conn = getDatabaseConnection();
+        // insert data in total table in database
+        databaseUtilities.createStateDailies(conn);
+        // close connection
+        databaseUtilities.closeConnection(conn);                 
+    }
+    
+    /**
+     * Method to create country dailies
+     */
+    public void createCountryDailies() {
+        Connection conn = getDatabaseConnection();
+        // insert data in total table in database
+        databaseUtilities.createCountryDailies(conn);
+        // close database
+        databaseUtilities.closeConnection(conn);
+    }
+    
+    /**
+     * Method to process world-o-meter scrape to enter data into a database
+     */
+    public void processWorldometerScrape(){
+        mResults.addResults("Starting World o meter scrape");
+        // declare and initialize variable
+        Connection conn = getDatabaseConnection();
+        
+        mResults.addResults(" United States Results");
+        processUnitedStatesScrape(conn);
+        mResults.addResults("\n\n World Results");
+        processWorldScrape(conn);
+        mResults.addResults("Completed World o meter scrape");
+        // close connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("\n\n Get Stat Totals");
+        getStatData();
+        mResults.addResults("Completed Stat Totals");
+        mResults.addResults("\n\n Calculate Totals");
+        // declare and initialize variable
+        conn = getDatabaseConnection();
+        calculateTotal(conn, YESTERDAY_DATE);
+        // close connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed Calaulate Totals");
+    }
+    
+    /**
+     * Method to get database connection
+     * @return database connection
+     */
+    private Connection getDatabaseConnection() {
+        // open connection to database
+        Connection conn = databaseUtilities.connect();
+            
+        return conn;
+    }
+    
+//    /**
+//     * Method to add statistiques countries to the database
+//     * @param lists to be added
+//     * @return 
+//     */
+//    public String addStatCountries(List<List<String>> lists) {
+//        // Declare variables
+//        Connection conn = null;
+//        String results = "Done";
+//        Set<String> set = new HashSet<>();
+//        lists.forEach(strings -> {
+//            set.add(strings.get(2));
+//        });
+//        try {
+//            conn = getDatabaseConnection();
+//            for(String string : set) {
+//                databaseUtilities.insertStatCountry(conn, string);
+//            }
+//        } catch (SQLException ex) {
+//            results = ex.getMessage();
+//        } finally {
+//            if (conn != null) {
+//                try {
+//                    databaseUtilities.closeConnection(conn);
+//                } catch (SQLException e) {
+//                    System.out.println(e.getMessage());
+//                }
+//            }
+//        }
+//        return results;
+//    }
+    
+    /**
      * Method to add statistiques countries data to the database
      */
     public void getStatData() {
@@ -820,8 +943,9 @@ public class CovidData {
         String country = "";
         java.sql.Date maxDate = null, mDate = null;
         int countryId = 0, id;
-        //lists = jsonUtilities.processJsonArrayFile("C:\\covid\\Files\\open_stats_coronavirus.json");
-        lists = jsonUtilities.processJsonArray(simpleDateFormat.format(YESTERDAY_DATE)); 
+        //lists = jsonUtilities.processJsonArray();
+        lists = jsonUtilities.processJsonArray(
+                simpleDateFormat.format(YESTERDAY_DATE)); 
         if (lists != null) {
             conn = getDatabaseConnection();
             for(List<String> list : lists) {
@@ -876,6 +1000,147 @@ public class CovidData {
         }
     }
     
+    /**
+     * Method to add our world in data to the database
+     * @param fileName of the file
+     */
+    public void loadOurWorldInData(String fileName) {
+        Connection conn;
+        List<List<String>> lists = csvUtilities.getCsvFile(PATH + fileName);
+        conn = getDatabaseConnection();
+        databaseUtilities.insertOurWorldInData(conn, lists);
+        // close connection
+        databaseUtilities.closeConnection(conn);
+    }
+    
+   
+    /**
+     * Method to scrape and process United States data
+     * @param conn to database
+     * @return results of WorldOMeter scrapes
+     */
+    private void processUnitedStatesScrape (Connection conn) {
+        // Declare constants
+        final String WORLDOMETER_US = 
+                "https://www.worldometers.info/coronavirus/country/us/";
+        final String US_BASE_NAME = "us_covid_";
+        
+        // scrape WorldOMeter for United States Table
+        ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
+        List<List<String>> unitedStatesStrings = 
+                scrapeUtilities.getTableData(WORLDOMETER_US);
+        
+        // process united states covid data and put in csv file
+        if (unitedStatesStrings != null) {
+            // modify raw US strings and add population
+            unitedStatesStrings = createUnitedStatesStrings(conn, 
+                    unitedStatesStrings);
+            // add date
+            unitedStatesStrings = addYesterday(unitedStatesStrings);
+            // write to database
+            writeUSToDatabase(conn, unitedStatesStrings);
+            mResults.addResults(
+                    "Successfully acquired United States covid data");
+        } else {
+            mResults.addResults("No US data");
+        }
+    }
+ 
+    /**
+     * Method to scrape and process World data
+     * @param conn to database
+     * @return results
+     */
+    private void processWorldScrape(Connection conn) {
+        // Declare constants
+        final String WORLDOMETER_ALL = 
+                "https://www.worldometers.info/coronavirus/";
+        final String WORLD_BASE_NAME = "world_covid_";
+        
+        // Scrape world table
+        ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
+        List<List<String>> worldStrings = 
+                scrapeUtilities.getTableData(WORLDOMETER_ALL);
+        // process world covid data and put in csv file
+        if (worldStrings != null) {
+            // modify raw world covid data
+            worldStrings = createWorldStrings(conn, worldStrings);
+            // add date
+            worldStrings = addYesterday(worldStrings);
+            // write to database
+            writeWorldToDatabase(conn, worldStrings);
+            mResults.addResults( 
+                    "Successfully acquired world covid data");
+        }
+    }
+
+    /**
+     * Method to generate a file name
+     * @param baseName to use
+     * @return full file name
+     */
+    private String createFileName(String baseName) {
+        // put file name together and return
+        return PATH + baseName + YESTERDAY + ".csv";
+    }
+
+    /**
+     * Method to get yesterday's date
+     * @return a string representation of yesterday's date
+     */
+    private String getYesterdaysDate () {
+        
+        // get date
+        LocalDate today = LocalDate.now().minusDays(1);
+        
+        java.sql.Date yesterday = java.sql.Date.valueOf(today);
+        return simpleDateFormatAlt.format(yesterday);
+    }
+    
+    /**
+     * Method to get yesterday's date
+     * @return yesterday's date
+     */
+    private java.sql.Date getYesterday() {
+        // get date and remove 1 day
+        LocalDate date = LocalDate.now().minusDays(1);
+        // convert to sql date
+        java.sql.Date yesterday = java.sql.Date.valueOf(date);
+        // convert to sql
+        return yesterday;
+    }
+    
+    /**
+     * Method to get today's date
+     * @return a string representation of yesterday's date
+     */
+    private java.sql.Date getTodaysDate () {
+        // get date
+        java.util.Date date = new java.util.Date();
+        java.sql.Date today = new java.sql.Date(date.getTime());
+        return today;
+    }
+
+    /**
+     * Method to add yesterday's date to each list of strings
+     * @param lists to add yesterday's date to
+     * @return converted lists
+     */
+    private List<List<String>> addYesterday (List<List<String>> lists) {
+        // start loops
+        for (int i = 0; i < lists.size(); i++) {
+            if (i == 0) {
+                // add heading
+                 lists.get(i).add("Date");
+            } else {
+                // add date
+                lists.get(i).add(YESTERDAY);
+            }
+        }
+        // return converted lists
+        return lists;
+    }
+
     /**
      * Method to remove unwanted columns
      * @param conn to database
@@ -945,58 +1210,15 @@ public class CovidData {
         updatePopulation(conn, "UnitedStates", newLists);
         return newLists;
     }
-    
+
     /**
-     * Method to update population
-     * @param conn to the database
-     * @param country either World or UnitedStates
-     * @param lists to update
+     * Method to convert population and add to total population
+     * @param totalPopulation current total
+     * @param strings string with value to add
+     * @return new total population
      */
-    private void updatePopulation(Connection conn, String country, 
-            List<List<String>> lists) {
-        long adjustment;
-       
-        for (int i = 1; i < lists.size(); i++) {
-            long population = convertPopulation(lists.get(i).get(4));
-            String place = lists.get(i).get(0);
-            if (country.equals("UnitedStates")) {
-                long statePopulation = databaseUtilities
-                        .selectStatePopulation(conn, place);
-                if (statePopulation == 0) {
-                    databaseUtilities.insertStatePopulation(conn, place, 
-                            population);
-                } else {
-                adjustment = statePopulation / 10;
-                    if (statePopulation > population - adjustment && 
-                            statePopulation < population + adjustment && 
-                            population != statePopulation) {
-                        databaseUtilities.updateStatePopulation(conn, place, 
-                                population);
-                    }
-                }
-            } else {
-                long countryPopulation = databaseUtilities
-                        .selectWorldPopulation(conn, place);
-                if (countryPopulation == 0 && population != 0) {
-                    if (databaseUtilities.selectCountryId(conn, place) != 0) {
-                        databaseUtilities.insertWorldPopulation(conn, place, 
-                                population);
-                    }
-                } else {
-                    adjustment = countryPopulation / 10;
-                    if (countryPopulation > population - adjustment && 
-                            countryPopulation < population + adjustment && 
-                            countryPopulation != population) {
-                        databaseUtilities.updateWorldPopulation(conn, place, 
-                                population);
-                        if (place.equals("USA")) {
-                            databaseUtilities.updateStatePopulation(conn, 
-                                    "USA Total", population);
-                        }
-                    }
-                }
-            }
-        }
+    private long getTotalPopulation(long totalPopulation, List<String> strings) {
+        return totalPopulation += convertPopulation(strings.get(4));
     }
     
     /**
@@ -1021,88 +1243,18 @@ public class CovidData {
     }
 
     /**
-     * Method to add yesterday's date to each list of strings
-     * @param lists to add yesterday's date to
-     * @return converted lists
+     * Method to remove state populations from raw strings
+     * @param lists to extract information from
+     * @return map with populations
      */
-    private List<List<String>> addYesterday (List<List<String>> lists) {
-        // start loops
-        for (int i = 0; i < lists.size(); i++) {
-            if (i == 0) {
-                // add heading
-                 lists.get(i).add("Date");
-            } else {
-                // add date
-                lists.get(i).add(YESTERDAY);
-            }
-        }
-        // return converted lists
-        return lists;
-    }
-    
-    /**
-     * Method to write US totals to the database
-     * @param conn to the database
-     * @param lists of data to process
-     * @return results
-     */
-    private void writeUSToDatabase(Connection conn, 
+    private HashMap<String, String> createStatePopulations(
             List<List<String>> lists) {
+        // Declare variables
+        HashMap<String, String> hashMap = new HashMap<>();
+        // get population and state name and put in hash map
         for (int i = 1; i < lists.size(); i++) {
-            if (!lists.get(i).get(0).equals("Total:")) {
-                // insert data in total table in database
-                databaseUtilities.insertUSTotal(conn, lists.get(i));
-            }
-        } 
-    }
-    
-    /**
-     * Method to get yesterday's date
-     * @return a string representation of yesterday's date
-     */
-    private String getYesterdaysDate () {
-        
-        // get date
-        LocalDate today = LocalDate.now().minusDays(1);
-        
-        java.sql.Date yesterday = java.sql.Date.valueOf(today);
-        return simpleDateFormatAlt.format(yesterday);
-    }
-    
-    /**
-     * Method to get yesterday's date
-     * @return yesterday's date
-     */
-    private java.sql.Date getYesterday() {
-        // get date and remove 1 day
-        LocalDate date = LocalDate.now().minusDays(1);
-        // convert to sql date
-        java.sql.Date yesterday = java.sql.Date.valueOf(date);
-        // convert to sql
-        return yesterday;
-    }
-    
-    /**
-     * Method to write World totals to the database
-     * @param conn to the database
-     * @param lists of data to process
-     */
-    private void writeWorldToDatabase(Connection conn, 
-            List<List<String>> lists) {
-        // insert data in total table in database
-        for(int i = 1; i < lists.size(); i++) {
-            databaseUtilities.insertWorldTotal(conn, lists.get(i));
+            hashMap.put(lists.get(i).get(2), lists.get(i).get(3));
         }
-    }
-    
-    /**
-     * Method to get database connection
-     * @return database connection
-     */
-    private Connection getDatabaseConnection() {
-        // open connection to database
-        Connection conn = databaseUtilities.connect();
-            
-        return conn;
+        return hashMap;
     }
 }
