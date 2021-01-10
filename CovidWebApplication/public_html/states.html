@@ -27,86 +27,64 @@
 
 <html lang="en">
 <head>
-  <title>Country Totals</title>
+  <title>US States</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <script>
-    function loadTable(mydate) {
-        if (mydate === null) 
-            $.ajax(
-            'country_totals_dates.php',
+    function loadTable() {
+        
+        $.ajax(
+            'states.php',
             {
-                success: function(mylist) {
-                    $('#listItems').html(mylist);
+                success: function(data) {
+                    $('#tableBody').html(data);
                 },
                 error: function() {
-                  alert('There was some error performing the AJAX call to country dates!');
+                  alert('There was some error performing the AJAX call!');
                 }
              }
           );
         
-        $.ajax({
-            url: 'country_totals.php',
-            type: "POST",
-            data: ({date: mydate}),
-                success: function(mydata) {
-                    $('#tableBody').html(mydata);
-                },
-                error: function() {
-                  alert('There was some error performing the AJAX call to country totals!');
-                }
-             }
-          );
+      
     }
   </script>
 </head>
-<body onload="loadTable(null)">
+<body onload="loadTable()">
     <nav class="navbar navbar-inverse">
         <div class="container-fluid">
           <div class="navbar-header">
             <a class="navbar-brand" href="#">Real Deal Analytics</a>
           </div>
           <ul class="nav navbar-nav">
-            <li class="active"><a href="country_totals.html">Country Totals</a></li>
+            <li class="active"><a href="states.html">US States</a></li>
             <li><a href="index.html">Country Calculations</a></li>
+            <li><a href="country_totals.html">Country Totals</a></li>
             <li><a href="country_dailies.html">Country Dailies</a></li>
             <li><a href="country_codes.html">Country Codes</a></li>
             <li><a href="country_labels.html">Country Labels</a></li>
-            <li><a href="states.html">US States</a></li>
             <li><a href="state_totals.html">US State Totals</a></li>
             <li><a href="state_dailies.html">US State Dailies</a></li>
             <li><a href="stat_countries.html">Stat Countries</a></li>
             <li><a href="stat_totals.html">Stat Totals</a></li>
             <li><a href="country_history.html">Our World In Data</a></li>
-            <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Dates
-              <span class="caret"></span></a>
-              <ul class="dropdown-menu" id="listItems">
-                
-              </ul>
-            </li>
           </ul>
         </div>
     </nav>
     <div class="container">
-        <h1>Country Totals Table </h1> 
-        <table class="table table-striped table-bordered">
-          <thead>
-              <tr>
-                <th>Country<br></th>
-                <th>Cases</th>
-                <th>Active Cases</th>
-                <th>Deaths</th>
-                <th>Recovered</th>
-                <th>Date</th>
-              </tr>
-          </thead>
-          <tbody id="tableBody">
-          </tbody>
-        </table>
+      <h1>US States Table</h1> 
+      <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+              <th>State<br></th>
+              <th>Population</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
     </div>
 
 </body>
