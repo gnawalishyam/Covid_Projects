@@ -1,13 +1,28 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * The MIT License
+ *
+ * Copyright 2020 Gary Larson gary@thalic.mobi.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 package mobi.thalic.covid;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.Connection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -196,6 +211,27 @@ public class CovidData {
     }
     
     /**
+     * Method to create and add calculations to the database
+     */
+    public void runCalculations(String date) {
+        mResults.addResults("Starting run calculations!");
+        // get connection to the database
+        Connection conn = getDatabaseConnection();
+        // convert date string to date
+        try {
+            java.util.Date parsedate = simpleDateFormat.parse(date);
+            java.sql.Date sql = new java.sql.Date(parsedate.getTime());
+            // calculate totals for yesterday
+            calculateTotal(conn, sql);
+        } catch(ParseException e) {
+            System.out.println(e);
+        }
+        // close database connection
+        databaseUtilities.closeConnection(conn);
+        mResults.addResults("Completed run calculations!");
+    }
+    
+    /**
      * Method to create the data points for the front end
      * @param conn connection to the database
      * @param date of the data
@@ -212,9 +248,6 @@ public class CovidData {
         // get active from database
         Map<String, Long> activeData = 
                 databaseUtilities.getActiveData(conn, date);
-        // get recovered from database
-        Map<String, Long> recoveredData = 
-                databaseUtilities.getRecoveredData(conn, date);
         // get population list from database
         List<CountryLong> populationList = 
                 databaseUtilities.getPopulationData(conn, date);
@@ -230,9 +263,9 @@ public class CovidData {
         // get recovered10k from database
         List<CountryDouble> recovered10kList = 
                 databaseUtilities.getRecovered10kData(conn, date);
-        // get mortality from database
-        Map<String, Double> mortalityData = 
-                databaseUtilities.getMortalityData(conn, date);
+        // get recovered percent data
+        List<CountryDouble> recoveredPercentList = 
+                databaseUtilities.getRecoveredPercentData(conn, date);
         // create population ranks
         Map<String, Integer> populationRanks = 
                 assignRanksLong(populationList);
@@ -248,6 +281,9 @@ public class CovidData {
         // create recovered10k ranks
         Map<String, Integer> recovered10kRanks = 
                 assignRanksDouble(recovered10kList);
+        // create recovered percent ranks
+        Map<String, Integer> recoveredPercentRanks = 
+                assignRanksDouble(recoveredPercentList);
         // create case10k medians
         Map<String, Double> cases10kMedians = createMediansAsc(cases10kList);
         // create cases10k scores
@@ -269,12 +305,14 @@ public class CovidData {
         // create recovered10k scores
         Map<String, String> recovered10kScores = 
                 createScoresDesc(recovered10kMedians, recovered10kList);
+        // create recovered percent scores
+        Map<String, String> recoveredPercentScores = 
+                createRecoveredPercentScores(recoveredPercentList);
         // create overall scores
         List<CountryDouble> overallScoresList = 
-                createOverallScores(populationList, cases10kScores, 
-                        deaths10kScores, active10kScores);
+                createOverallScores(populationList, deaths10kScores, 
+                        active10kScores);
         // create overall score ranks
-        // create recovered10k ranks
         Map<String, Integer> overallScoresRanks = 
                 assignRanksDouble(overallScoresList);
         // create overall scores medians
@@ -283,14 +321,17 @@ public class CovidData {
         // create overall scores
         Map<String, String> overallScores = 
                 createScoresDesc(overallScoresMedians, overallScoresList);
-        // create populations
+        // create populations data
         Map<String, Long> populationData = createDataLong(populationList);
-        // create cases10k
+        // create cases10k data
         Map<String, Double> cases10kData = createDataDouble(cases10kList);
-        // create deaths10k
+        // create deaths10k data
         Map<String, Double> deaths10kData = createDataDouble(deaths10kList);
-        // create active10k
+        // create active10k data
         Map<String, Double> active10kData = createDataDouble(active10kList);
+        // create recovered percent data
+        Map<String, Double> recoveredPercentData = 
+                createDataDouble(recoveredPercentList);
         // create recovered10k
         Map<String, Double> recovered10kData = 
                 createDataDouble(recovered10kList);
@@ -317,13 +358,15 @@ public class CovidData {
             calc.setPercentActive(calculatePercent(activeData.get(country), 
                     worldData.getActive()));
             // set percent of recovered cases
-            calc.setPercentRecovered(calculatePercent(recoveredData.get(country), 
+            calc.setPercentRecovered(calculatePercent(casesData.get(country) - 
+                    activeData.get(country) - deathsData.get(country), 
                     worldData.getRecovered()));
             // set percent of world total cases
             calc.setPercentCases(calculatePercent(casesData.get(country),  
                     worldData.getCases()));
             // set percent of mortality
-            calc.setPercentMortality(mortalityData.get(country));
+            calc.setPercentMortality(calculatePercent(deathsData.get(country), 
+                    casesData.get(country) - activeData.get(country)));
             // set population
             calc.setPopulation(populationData.get(country));
             // set population rank
@@ -357,14 +400,18 @@ public class CovidData {
             // set overall score
             calc.setScore(overallScores.get(country));
             // calculate and set survival rate
-            calc.setSurvivalRate(calculatePercent(recoveredData.get(country), 
-                    recoveredData.get(country) + deathsData.get(country)));
+            calc.setSurvivalRate(calculatePercent(casesData.get(country) - 
+                    activeData.get(country) - deathsData.get(country), 
+                    casesData.get(country) - activeData.get(country)));
             // calculate and set active percent
             calc.setActivePercent(calculatePercent(activeData.get(country), 
                     casesData.get(country)));
-            // calculate and set recovered percent
-            calc.setRecoveredPercent(calculatePercent(
-                    recoveredData.get(country), casesData.get(country)));
+            // set recovered percent
+            calc.setRecoveredPercent(recoveredPercentData.get(country));
+            // set recovered percent rank
+            calc.setRecoveredPercentRank(recoveredPercentRanks.get(country));
+            // set recovered percent score
+            calc.setRecoveredPercentScore(recoveredPercentScores.get(country));
             // add calculations to calculations list
             databaseUtilities.insertCalculation(conn, calc);
         }
@@ -378,6 +425,9 @@ public class CovidData {
      */
     private double calculatePercent(long number1, long number2) {
         // calculate percentage
+        if (number2 == 0) {
+            return 0.0;
+        }
         double tempDouble = ((double) number1 / number2) * 100;
         // convert to string
         String tempString = String.format(Locale.getDefault(), "%.2f", tempDouble);
@@ -450,8 +500,7 @@ public class CovidData {
      * @return sorted country scores list
      */
     private List<CountryDouble> createOverallScores(List<CountryLong> list, 
-            Map<String, String> score1, Map<String, String> score2, 
-            Map<String, String> score3) {
+            Map<String, String> score1, Map<String, String> score2) {
         // declare variables
         List<CountryDouble> countryScoresList = new ArrayList<>();
         Map<String, Double> scoresMap = new HashMap<>();
@@ -461,9 +510,9 @@ public class CovidData {
             // get country
               String country = list.get(i).getCountry();
               // calculate overall score
-              double score = calculatePercent((getScoreValue(score1.get(country)) + 
-                      getScoreValue(score2.get(country)) + 
-                      getScoreValue(score3.get(country))) / 3.0);
+              double score = calculatePercent(
+                      (getScoreValue(score1.get(country)) + 
+                      getScoreValue(score2.get(country))) / 2.0);
               // put country and overall score in map
               scoresMap.put(country, score);
               // put score in list to be reordered
@@ -771,6 +820,50 @@ public class CovidData {
         for (int i = 0; i < list.size(); i++) {
             scores.put(list.get(i).getCountry(), 
                     getScoreDesc(medians, list.get(i).getValue()));
+        }
+        return scores;
+    }
+    
+    /**
+     * Method to create scores
+     * @param list of values
+     * @return scores
+     */
+    private Map<String, String> createRecoveredPercentScores(
+            List<CountryDouble> list) {
+        Map<String, String> scores = new HashMap<>();
+        String score;
+        
+        for (int i = 0; i < list.size(); i++) {
+            double value = list.get(i).getValue();
+            if (value > 96.0) {
+                score = "A+";
+            } else if (value > 92.0) {
+                score = "A";
+            } else if (value > 86.0) {
+                score = "A-";
+            } else if (value > 82.0) {
+                score = "B+";
+            } else if (value > 78.0) {
+                score = "B";
+            } else if (value > 74.0) {
+                score = "B-";
+            } else if (value > 70.0) {
+                score = "C+";
+            } else if (value > 66.0) {
+                score = "C";
+            } else if (value > 62.0) {
+                score = "C-";
+            } else if (value > 58.0) {
+                score = "D+";
+            } else if (value > 54.0) {
+                score = "D";
+            } else if (value > 50.0) {
+                score = "D-";
+            } else {
+                score = "F";
+            }
+            scores.put(list.get(i).getCountry(), score);
         }
         return scores;
     }
