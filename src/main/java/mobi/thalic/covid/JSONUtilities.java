@@ -21,8 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package mobi.thalic.covid;
-
+package mobi.thalic.getcoviddata;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -103,53 +102,6 @@ public class JSONUtilities {
     }
     
     /**
-     * Method to process a statistiques json url
-     * @return a list of lists representation of the json
-     */
-    public List<List<String>> processJsonArray () {
-        //declare variables
-        JSONParser jsonParser = new JSONParser();
-        List<List<String>> dataList = new ArrayList<>();
-        String dataString = "";
-        
-        try {
-            URL url = new URL(STAT_URL_JSON);
-            Object obj = new JSONParser().parse(
-                    new InputStreamReader(url.openStream(), "UTF-8")); 
-            
-            JSONArray jsonArray = (JSONArray) obj;
-            // create list of lists
-            for (int i = 0; i < jsonArray.size(); i++) {
-                List<String> data = new ArrayList<>();
-                JSONObject jsonData = (JSONObject) jsonArray.get(i);
-                String temp = (String) jsonData.get("date");
-                data.add(temp);
-                temp = (String) jsonData.get("code");
-                data.add(temp);
-                temp = (String) jsonData.get("nom");
-                data.add(temp);
-                temp = (String) jsonData.get("cas");
-                data.add(temp);
-                temp = (String) jsonData.get("deces");
-                data.add(temp);
-                temp = (String) jsonData.get("guerisons");
-                data.add(temp);
-                temp = (String) jsonData.get("source");
-                data.add(temp);
-                dataList.add(data);
-            }
-            return dataList;
-        } catch (FileNotFoundException e) {
-            mResults.addResults("processJsonArray FileNotFound Exception " + 
-                    e.getMessage());
-        } catch (IOException | ParseException e) {
-            mResults.addResults("processJsonArray IO or parse Exception " + 
-                    e.getMessage());
-        }  
-        return null;
-    }
-    
-    /**
      * Method to process a statistiques json file that is an array
      * @param fileName to process
      * @return a list of lists representation of the json file
@@ -161,7 +113,7 @@ public class JSONUtilities {
             object = new JSONParser().parse(new InputStreamReader(
                     new FileInputStream(fileName), "UTF-8")); 
         } catch (IOException e) {
-            mResults.addResults("processJsonArrayFile " + e.getMessage());
+            mResults.addResults("processKsonArrayFile " + e.getMessage());
         } catch (ParseException e) {
             mResults.addResults("processJsonArrayFile Parse Exception" + 
                     e.getMessage());

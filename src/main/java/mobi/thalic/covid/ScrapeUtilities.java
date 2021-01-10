@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2020 Gary Larson gary@thalic.mobi.
+ * Copyright 2020 Gary Larson <gary@thalic.mobi>.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package mobi.thalic.covid;
+package mobi.thalic.getcoviddata;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,8 +30,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 /**
- * Class to deal with website scraping using JSOUP library
- * @author GaryL
+ * Class to deal with scraping websites
+ * @author Gary Larson gary@thalic.mobi
  */
 public class ScrapeUtilities {
     /**
@@ -47,8 +47,9 @@ public class ScrapeUtilities {
             Document doc = Jsoup.connect(url).get();
             // convert html to a string
             htmlString = doc.toString();
-        } catch (IOException e) {
+        } catch (IOException e) { 
             System.out.println("An error occurred. jsoup: " + e);
+            System.exit(1);
         }
 
         // if no html return nothing

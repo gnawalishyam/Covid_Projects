@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package mobi.thalic.covid;
+package mobi.thalic.getcoviddata;
 
 /**
  * Class to deal with world data for calculating front end data

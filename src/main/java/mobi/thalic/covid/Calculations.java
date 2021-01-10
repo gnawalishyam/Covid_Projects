@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package mobi.thalic.covid;
+package mobi.thalic.getcoviddata;
 
 /**
  * class to manage the calculations for the front end
@@ -56,9 +56,6 @@ public class Calculations {
     private double survivalRate;
     private double activePercent;
     private double recoveredPercent;
-    private int recoveredPercentRank;
-    private String recoveredPercentScore;
-    
     
     /**
      * Default Constructor
@@ -495,37 +492,5 @@ public class Calculations {
      */
     public void setRecoveredPercent(double recoveredPercent) {
         this.recoveredPercent = recoveredPercent;
-    }
-    
-    /**
-     * Getter for recovered percent rank
-     * @return recovered percent rank
-     */
-    public int getRecoveredPercentRank() {
-        return recoveredPercentRank;
-    }
-    
-    /**
-     * Setter for recovered percent rank
-     * @param rank  to set
-     */
-    public void setRecoveredPercentRank(int rank) {
-        this.recoveredPercentRank = rank;
-    }
-    
-    /**
-     * Getter for recovered percent score
-     * @return recovered percent score
-     */
-    public String getRecoveredPercentScore() {
-        return recoveredPercentScore;
-    }
-    
-    /**
-     * Setter for recovered percent score
-     * @param score to set
-     */
-    public void setRecoveredPercentScore(String score) {
-        this.recoveredPercentScore = score;
     }
 }

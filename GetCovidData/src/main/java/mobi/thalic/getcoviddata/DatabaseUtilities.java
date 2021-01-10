@@ -1478,6 +1478,54 @@ public class DatabaseUtilities {
         }
         return active;
     }
+    
+    /**
+     * Method to get recovered data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return recovered data
+     */
+    public Map<String, Long> getRecoveredData(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_RECOVERED_COUNTRY_TOTALS_SQL = 
+                "SELECT display, cases - active - deaths AS recovered "
+                + "FROM country_totals INNER JOIN country_codes "
+                + "ON country_totals.country_id = country_codes.id "
+                + "WHERE `date` = ? "
+                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
+                + "ORDER BY recovered DESC;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getRecoveredData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> recovered = new HashMap<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement = 
+                       conn.prepareStatement(SELECT_RECOVERED_COUNTRY_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                    // run query and get results
+                    ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        recovered.put(resultSet.getString("display"), 
+                                resultSet.getLong("recovered"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getRecoveredData " + date.toString() + " " + 
+                        e.getMessage());
+                return null;
+            }
+        }
+        return recovered;
+    }
    
     /**
      * Method to get cases10k data from the database
@@ -1488,13 +1536,13 @@ public class DatabaseUtilities {
     public List<CountryDouble> getCases10kData(Connection conn, 
             java.sql.Date date) {
         // Declare constant
-        final String SELECT_CASES10K_COUNTRY_TOTALS_SQL =
+        final String SELECT_CASES10K_COUNTRY_TOTALS_SQL = 
                 "SELECT display, FORMAT((cases / population) * 10000, 2, false) AS cases10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (cases / population) * 10000;";
+                + "FROM country_totals INNER JOIN country_codes "
+                + "ON country_totals.country_id = country_codes.id "
+                + "WHERE `date` = ? "
+                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
+                + "ORDER BY (cases / population) * 10000;";
         // test connection
         if (conn == null) {
             mResults.addResults("getCases10kData no connection");
@@ -1504,9 +1552,9 @@ public class DatabaseUtilities {
         List<CountryDouble> cases10k = new ArrayList<>();
         if (conn != null) {
             try (
-                // statement to use to get stat country id
-                PreparedStatement statement =
-                    conn.prepareStatement(SELECT_CASES10K_COUNTRY_TOTALS_SQL)) {
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_CASES10K_COUNTRY_TOTALS_SQL)) {
                 // add date parameter
                 statement.setDate(1, date);
                 try (
@@ -1516,7 +1564,7 @@ public class DatabaseUtilities {
                     while (resultSet.next()) {
                         CountryDouble countryDouble = new CountryDouble(
                                 resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("cases10k")));
+                                resultSet.getDouble("cases10k"));
                         cases10k.add(countryDouble);
                     }
                 }
@@ -1535,16 +1583,16 @@ public class DatabaseUtilities {
      * @param date of the data
      * @return deaths10k data
      */
-    public List<CountryDouble> getDeaths10kData(Connection conn,
-                                                                         java.sql.Date date) {
+    public List<CountryDouble> getDeaths10kData(Connection conn, 
+            java.sql.Date date) {
         // Declare constant
-        final String SELECT_DEATHS10K_COUNTRY_TOTALS_SQL =
+        final String SELECT_DEATHS10K_COUNTRY_TOTALS_SQL = 
                 "SELECT display, FORMAT((deaths / population) * 10000, 2, false) AS deaths10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (deaths / population) * 10000;";
+                + "FROM country_totals INNER JOIN country_codes "
+                + "ON country_totals.country_id = country_codes.id "
+                + "WHERE `date` = ? "
+                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
+                + "ORDER BY (deaths / population) * 10000;";
         // test connection
         if (conn == null) {
             mResults.addResults("getDeaths10kData no connection");
@@ -1566,7 +1614,7 @@ public class DatabaseUtilities {
                     while (resultSet.next()) {
                         CountryDouble countryDouble = new CountryDouble(
                                 resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("deaths10k")));
+                                resultSet.getDouble("deaths10k"));
                         deaths10k.add(countryDouble);
                     }
                 }
@@ -1585,16 +1633,16 @@ public class DatabaseUtilities {
      * @param date of the data
      * @return active10k data
      */
-    public List<CountryDouble> getActive10kData(Connection conn,
-                java.sql.Date date) {
+    public List<CountryDouble> getActive10kData(Connection conn, 
+            java.sql.Date date) {
         // Declare constant
-        final String SELECT_ACTIVE10K_COUNTRY_TOTALS_SQL =
+        final String SELECT_ACTIVE10K_COUNTRY_TOTALS_SQL = 
                 "SELECT display, FORMAT((active / population) * 10000, 2, false) AS active10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (active / population) * 10000;";
+                + "FROM country_totals INNER JOIN country_codes "
+                + "ON country_totals.country_id = country_codes.id "
+                + "WHERE `date` = ? "
+                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
+                + "ORDER BY (active / population) * 10000;";
         // test connection
         if (conn == null) {
             mResults.addResults("getActive10kData no connection");
@@ -1616,7 +1664,7 @@ public class DatabaseUtilities {
                     while (resultSet.next()) {
                         CountryDouble countryDouble = new CountryDouble(
                                 resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("active10k")));
+                                resultSet.getDouble("active10k"));
                         active10k.add(countryDouble);
                     }
                 }
@@ -1630,35 +1678,23 @@ public class DatabaseUtilities {
     }
     
     /**
-     * Method to remove commas from string
-     * @param string to clean
-     * @return number in double format
-     */
-    private double cleanDouble (String string) {
-        string = string.replace(",", "");
-        double tempDouble = 0.0;
-        tempDouble = Double.parseDouble(string);
-        return tempDouble;
-    }
-    
-    /**
      * Method to get recovered10k data from the database
      * @param conn to the database
      * @param date of the data
      * @return recovered10k data
      */
-    public List<CountryDouble> getRecovered10kData(Connection conn,
-                java.sql.Date date) {
+    public List<CountryDouble> getRecovered10kData(Connection conn, 
+            java.sql.Date date) {
         // Declare constant
-        final String SELECT_RECOVERED10K_COUNTRY_TOTALS_SQL =
+        final String SELECT_RECOVERED10K_COUNTRY_TOTALS_SQL = 
                 "SELECT display, FORMAT(((cases - deaths - `active`) / "
-                        + "population) * 10000, 2, false) AS recovered10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY ((cases - deaths - `active`) / population) * 10000 "
-                        + "DESC;";
+                + "population) * 10000, 2, false) AS recovered10k "
+                + "FROM country_totals INNER JOIN country_codes "
+                + "ON country_totals.country_id = country_codes.id "
+                + "WHERE `date` = ? "
+                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
+                + "ORDER BY ((cases - deaths - `active`) / population) * 10000 "
+                + "DESC;";
         // test connection
         if (conn == null) {
             mResults.addResults("getRecovered10kData no connection");
@@ -1679,8 +1715,8 @@ public class DatabaseUtilities {
                     // check if results
                     while (resultSet.next()) {
                         CountryDouble countryDouble = new CountryDouble(
-                            resultSet.getString("display"),
-                            cleanDouble(resultSet.getString("recovered10k")));
+                                resultSet.getString("display"),
+                                resultSet.getDouble("recovered10k"));
                         recovered10k.add(countryDouble);
                     }
                 }
@@ -1694,36 +1730,35 @@ public class DatabaseUtilities {
     }
     
     /**
-     * Method to get recovered data from the database
+     * Method to get mortality data from the database
      * @param conn to the database
      * @param date of the data
-     * @return recovered data
+     * @return mortality data
      */
-    public List<CountryDouble> getRecoveredPercentData(Connection conn,
-                                              java.sql.Date date) {
+    public Map<String, Double> getMortalityData(Connection conn, 
+            java.sql.Date date) {
         // Declare constant
-        final String SELECT_RECOVERED_PERCENT_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT(((cases - `active` - deaths) / cases) "
-                        + "* 100, 2, false) AS recoveredPercent "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                        + "ORDER BY ((cases - `active` - deaths) / cases) * "
-                        + "100 DESC;";
+        final String SELECT_MORTALITY_COUNTRY_TOTALS_SQL = 
+                "SELECT display, FORMAT((deaths / (deaths + "
+                + "(cases - `active` - deaths))) * 100, 2, false) AS mortality "
+                + "FROM country_totals INNER JOIN country_codes "
+                + "ON country_totals.country_id = country_codes.id "
+                + "WHERE `date` = ? "
+                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
+                + "ORDER BY (deaths / (deaths + (cases - `active` - deaths))) * "
+                + "100;";
         // test connection
         if (conn == null) {
-            mResults.addResults("getRecoveredPercentData no connection");
+            mResults.addResults("getMortalityData no connection");
             connect();
         }
         // declare variable
-        List<CountryDouble> recoveredPercent = new ArrayList<>();
+        Map<String, Double> mortality = new HashMap<>();
         if (conn != null) {
             try (
                     // statement to use to get stat country id
                     PreparedStatement statement =
-                            conn.prepareStatement(
-                                SELECT_RECOVERED_PERCENT_COUNTRY_TOTALS_SQL)) {
+                            conn.prepareStatement(SELECT_MORTALITY_COUNTRY_TOTALS_SQL)) {
                 // add date parameter
                 statement.setDate(1, date);
                 try (
@@ -1731,19 +1766,17 @@ public class DatabaseUtilities {
                         ResultSet resultSet = statement.executeQuery()) {
                     // check if results
                     while (resultSet.next()) {
-                        recoveredPercent.add(new CountryDouble(
-                            resultSet.getString("display"),
-                            cleanDouble(resultSet
-                                    .getString("recoveredPercent"))));
+                        mortality.put(resultSet.getString("display"),
+                                resultSet.getDouble("mortality"));
                     }
                 }
             } catch (SQLException e) {
-                mResults.addResults("getRecoveredPercentData " + date.toString() 
-                        + " " + e.getMessage());
+                mResults.addResults("getMortalityData " + date.toString() + " " +
+                        e.getMessage());
                 return null;
             }
         }
-        return recoveredPercent;
+        return mortality;
     }
     
     /**
@@ -1809,11 +1842,9 @@ public class DatabaseUtilities {
                 + "deaths10k_rank, deaths10k_score, active10k, active10k_rank, "
                 + "active10k_score, recovered10k, recovered10k_rank, "
                 + "recovered10k_score, cases10k, cases10k_rank, cases10k_score, "
-                + "`rank`, score, survival_rate, active_percent, "
-                + "recovered_percent, recovered_percent_rank, "
-                + "recovered_percent_score) "
+                + "`rank`, score, survival_rate, active_percent, recovered_percent) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
         // test connection
         if (conn == null) {
             mResults.addResults("getRecoveredData no connection");
@@ -1878,15 +1909,10 @@ public class DatabaseUtilities {
                 statement.setDouble(26, calc.getActivePercent());
                 // add recovered percent parameter
                 statement.setDouble(27, calc.getRecoveredPercent());
-                // add recovered percent rank
-                statement.setInt(28, calc.getRecoveredPercentRank());
-                // add recovered percent score
-                statement.setString(29, calc.getRecoveredPercentScore());
                 // run statement
                 statement.execute();
             } catch (SQLException e) {
-                mResults.addResults("insertCalculations " + calc.getCountry() + 
-                        " " + calc.getDate().toString() + " " + e.getMessage());
+                mResults.addResults("insertCalculations " + e.getMessage());
             }
         }
     }
