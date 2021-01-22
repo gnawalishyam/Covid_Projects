@@ -24,7 +24,7 @@
  * THE SOFTWARE.
  */
 
-    $userDate = filter_input(INPUT_POST, 'date');
+    //$userDate = filter_input(INPUT_POST, 'date');
     // create connection string
     $servername = "52d9225.online-server.cloud";
     $username = "web_php";
@@ -43,7 +43,7 @@
         
         define ("DATE_QUERY", "SELECT MAX(`date`) AS mdate FROM country_calculations");
         
-        if ($userDate == null) {
+        //if ($userDate == null) {
             // get results from the date query
             $stmt = $db_conn->prepare(DATE_QUERY);
             $stmt->execute();
@@ -56,11 +56,11 @@
             $row = $stmt->fetch();
             // get date
             $date = $row["mdate"];
-        } else {
-            $date = $userDate;
-        }
+        //} else {
+        //    $date = $userDate;
+        //}
         
-        define ("TABLE_QUERY", "SELECT country, deaths10k 
+        define ("TABLE_QUERY", "SELECT deaths10k 
             FROM country_calculations 
             WHERE `date` = :dateParam
             ORDER BY deaths10k;");
@@ -75,23 +75,18 @@
             die("No Table Results");
         }
         $rows = $stmt->fetchAll();
+        // set CORS headers
+        header("Access-Control-Allow-Origin: *");
         // set JSON header
         header('Content-Type: application/json');
         // close database connection
         $db_conn = null;
-        // begin country loop
+        // begin deaths loop
         for ($i = 0; $i < count($rows); $i++) {
-            // set country
-            $jsonEntry["country"] = $rows[$i]["country"];
-            // set deaths per 10k population
-            $jsonEntry["deaths10k"] = floatval($rows[$i]["deaths10k"]);
             // add entry to array
-            $jsonArray[$i] = $jsonEntry;
+            $jsonArray[$i] = floatval($rows[$i]["deaths10k"]);
         }
-        // encode json array
-        $jsonObj["date"] = $date;
-        $jsonObj["deaths10k"] = $jsonArray;
-        $json = json_encode($jsonObj, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $json = json_encode($jsonArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         /* Return the JSON string. */
         echo $json;
     } catch(PDOException $e) {

@@ -53,6 +53,8 @@
         // set the resulting array to associative
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
+        // set CORS headers
+        header("Access-Control-Allow-Origin: *");
         // set JSON header
         header('Content-Type: application/json');
         // close database connection
