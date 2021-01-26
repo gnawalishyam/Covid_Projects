@@ -24,6 +24,72 @@
  * THE SOFTWARE.
  */
 
+function calculate_median($arr) {
+    $count = count($arr); //total numbers in array
+    $middleval = floor(($count-1)/2); // find the middle value, or the lowest middle value
+    if($count % 2) { // odd number, middle is the median
+        $median = $arr[$middleval];
+    } else { // even number, calculate avg of 2 medians
+        $low = $arr[$middleval];
+        $high = $arr[$middleval+1];
+        $median = (($low+$high)/2);
+    }
+    return $median;
+}
+
+function calculate_avg_distance($arr) {
+    $total_distance = 0;
+    $num_distances = 0;
+    for ($i = 0; $i < count($arr) - 2; $i++) {
+        $total_distance += $arr[$i + 1] - $arr[$i];
+        $num_distances++;
+    }
+    if ($num_distances === 0) {
+        return 0;
+    }
+    return $total_distance / $num_distances;
+}
+
+function standard_deviation($aValues, $bSample = false)
+{
+    $fMean = array_sum($aValues) / count($aValues);
+    $fVariance = 0.0;
+    foreach ($aValues as $i)
+    {
+        $fVariance += pow($i - $fMean, 2);
+    }
+    $fVariance /= ( $bSample ? count($aValues) - 1 : count($aValues) );
+    return (float) sqrt($fVariance);
+}
+
+function distribute_values($median, $rowArray) {
+    $medianSum = floatval($median);
+    $count = 0;
+    while ($medianSum < $rowArray[count($rowArray) - 1] - $median) {
+        $medianValues[$count] = $medianSum;
+        $medians["$medianSum"] = 0;
+        $medianSum += $median;
+        $count++;
+    }
+    $medians[">"] = 0;
+    // begin cases loop
+    for ($i = 0; $i < count($rowArray); $i++) {
+        $isPlaced = false;
+        for ($j = 0; $j < count($medianValues); $j++) {
+           if ($rowArray[$i] <= $medianValues[$j]) {
+               $medians["$medianValues[$j]"]++;
+               $isPlaced = true;
+               break;
+           }
+        }
+        if (!$isPlaced) {
+           $medians[">"]++;
+        }
+    }
+    return $medians;
+}
+
+
     //$userDate = filter_input(INPUT_POST, 'date');
     // create connection string
     $servername = "52d9225.online-server.cloud";
@@ -59,35 +125,118 @@
         //} else {
         //    $date = $userDate;
         //}
-        
+         
         define ("TABLE_QUERY", "SELECT cases10k 
             FROM country_calculations 
             WHERE `date` = :dateParam
             ORDER BY cases10k;");
         // get results from the table query
-        $stmt = $db_conn->prepare(TABLE_QUERY);
+        $stmt2 = $db_conn->prepare(TABLE_QUERY);
         // add parameter
-        $stmt->bindParam(':dateParam', $date);
-        $stmt->execute();
+        $stmt2->bindParam(':dateParam', $date);
+        $stmt2->execute();
         // set the resulting array to associative
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        if (!$stmt) {
+        if (!$stmt2) {
             die("No Table Results");
         }
-        $rows = $stmt->fetchAll();
+        $rows = $stmt2->fetchAll();
+        // make standard array
+        for ($i = 0; $i < count($rows); $i++) {
+            $rowArray[$i] = $rows[$i]["cases10k"];
+            
+        }
         // set CORS headers
         header("Access-Control-Allow-Origin: *");
         // set JSON header
         header('Content-Type: application/json');
         // close database connection
         $db_conn = null;
-        // begin cases loop
-        for ($i = 0; $i < count($rows); $i++) {
-            // add entry to array
-            $jsonArray[$i] = floatval($rows[$i]["cases10k"]);
+        // calculate standard deviation 
+        $standardDeviation = standard_deviation($rowArray);
+        // calculate variance
+        $variance = $standardDeviation ** 2;
+        // calculate mean
+        $mean = array_sum($rowArray) / count($rowArray);
+        // calculate median
+        $median = calculate_median($rowArray);
+        // create medians
+        $medians = distribute_values($median, $rowArray);
+        // split arrays at mean
+        $rowLowCount = 0;
+        $rowHighCount = 0;
+        for ($i = 0; $i < count($rowArray); $i++) {
+            if ($rowArray[$i] < $mean) {
+                $rowLow[$rowLowCount] = $rowArray[$i];
+                $rowLowCount++;
+            } else {
+                $rowHigh[$rowHighCount] = $rowArray[$i];
+                $rowHighCount++;
+            }
         }
+        // calculate median low
+        $medianLow = calculate_median($rowLow);
+        // create medians low
+        $mediansLow = distribute_values($medianLow, $rowLow);
+        // calulate standard deviation low
+        $standardDeviationLow = standard_deviation($rowLow);
+        // calculate variance low
+        $varianceLow = $standardDeviationLow ** 2;
+        // calculate mean low
+        $meanLow = array_sum($rowLow) / count($rowLow);
+        // calculate median High
+        $medianHigh = calculate_median($rowHigh);
+        // create medians High
+        $mediansHigh = distribute_values($medianHigh, $rowHigh);
+        // calulate standard deviation High
+        $standardDeviationHigh = standard_deviation($rowHigh);
+        // calculate variance High
+        $varianceHigh = $standardDeviationHigh ** 2;
+        // calculate mean High
+        $meanHigh = array_sum($rowHigh) / count($rowHigh);
+        // combine medians low and medians high
+        $arrayCount = 0;
+        $highestValue = 0;
+        while ($value = current($mediansLow)) {
+            if (key($mediansLow) === ">") {
+                $medianOut[$arrayCount] = $value;
+                $highestValue += $medianLow;
+                $medianLabels[$arrayCount] = "$highestValue";
+            } else {
+                $medianOut[$arrayCount] = $value;
+                $medianLabels[$arrayCount] = key($mediansLow);
+                $highestValue = floatval(key($mediansLow));
+            }
+            $arrayCount++;
+            next($mediansLow);
+        }
+        while ($value = current($mediansHigh)) {
+            $medianOut[$arrayCount] = $value;
+            $medianLabels[$arrayCount] = key($mediansHigh);
+            $arrayCount++;
+            next($mediansHigh);
+        }
+        // create Json Object
+        $jsonObj["date"] = $date;
+        $jsonObj["mean"] = $mean;
+        $jsonObj["median"] = $median;
+        $jsonObj["StandardDeviation"] = $standardDeviation;
+        $jsonObj["variance"] = $variance;
+//        $jsonObj["medians"] = $medians;
+//        $jsonObj["meanLow"] = $meanLow;
+//        $jsonObj["medianLow"] = $medianLow;
+//        $jsonObj["StandardDeviationLow"] = $standardDeviationLow;
+//        $jsonObj["varianceLow"] = $varianceLow;
+//        $jsonObj["mediansLow"] = $mediansLow;
+//        $jsonObj["meanHigh"] = $meanHigh;
+//        $jsonObj["medianHigh"] = $medianHigh;
+//        $jsonObj["StandardDeviationHigh"] = $standardDeviationHigh;
+//        $jsonObj["varianceHigh"] = $varianceHigh;
+//        $jsonObj["mediansHigh"] = $mediansHigh;
+        $jsonObj["values"] = $medianOut;
+        $jsonObj["labels"] = $medianLabels;
         // encode json array
-        $json = json_encode($jsonArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $json = json_encode($jsonObj, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         /* Return the JSON string. */
         echo $json;
     } catch(PDOException $e) {
