@@ -207,7 +207,7 @@ function combine($values, &$medianValues, &$temp, $low, $high) {
             die("Could not connect");
         }
         
-        define ("DATE_QUERY", "SELECT MAX(`date`) AS mdate FROM country_calculations");
+        define ("DATE_QUERY", "SELECT MAX(`date`) AS mdate FROM country_totals");
         
         //if ($userDate == null) {
             // get results from the date query
@@ -226,12 +226,15 @@ function combine($values, &$medianValues, &$temp, $low, $high) {
         //    $date = $userDate;
         //}
         
-        define ("TABLE_QUERY", "SELECT deaths10k 
-            FROM country_calculations 
-            WHERE `date` = :dateParam
-            ORDER BY deaths10k;");
+        define ("SELECT_QUERY", "SELECT  
+                (deaths / population) * 10000 AS deaths10k 
+                FROM country_totals INNER JOIN country_codes 
+                ON country_totals.country_id = country_codes.id 
+                WHERE `date` = :dateParam 
+                  AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') 
+                  ORDER BY (deaths / population) * 10000;");
         // get results from the table query
-        $stmt = $db_conn->prepare(TABLE_QUERY);
+        $stmt = $db_conn->prepare(SELECT_QUERY);
         // add parameter
         $stmt->bindParam(':dateParam', $date);
         $stmt->execute();

@@ -67,7 +67,7 @@ function standard_deviation($aValues, $bSample = false)
     return (float) sqrt($fVariance);
 }
 
-function distribute_values($median, $rowArray) {
+function distribute_values($median, $rowArray, $isHigh) {
     $lowest = getLowest($rowArray) - 0.01;
     $medianSum = $rowArray[0] - floatval($median);
     $medianValues[0] = 0;
@@ -79,7 +79,9 @@ function distribute_values($median, $rowArray) {
         $count++;
     }
     $medians["$lowest"] = 0;
-    $medians["0"] = 0;
+    if (!$isHigh) {
+        $medians["0"] = 0;
+    }
     return casesLoop($rowArray, $medians, $medianValues, $lowest);
 }
 
@@ -105,13 +107,13 @@ function casesLoop ($rowArray, $medians, $medianValues, $lowest) {
     return $medians;
 }
 
-function splitLargest($values, $counts, $original) {
+function splitLargest($values, $counts, $original, $offset) {
     $lowest = getLowest($original) - 0.01;
     $largest = 0;
-    $current = $values[count($values) - 2];
+    $current = $values[0];
     $low = 0;
     $high = 0;
-    for ($i = 0; $i < count($counts) - 1; $i++) {
+    for ($i = 0; $i < count($counts); $i++) {
         if ($counts[$i] > $largest) {
             $largest = $counts[$i];
             $high = $current;
@@ -122,41 +124,45 @@ function splitLargest($values, $counts, $original) {
     
     $medianValues = Array();
     $temp = Array();
-    split($values, $medianValues, $temp, $low, $high);
-    $temp["$lowest"] = 0;
-    $temp["0"] = 0;
+    split($values, $medianValues, $temp, $low, $high, $lowest, $offset);
     return casesLoop($original, $temp, $medianValues, $lowest);
 }
 
-function split($values, &$medianValues, &$temp, $low, $high) {
-    $current = $values[count($values) - 2];
+function split($values, &$medianValues, &$temp, $low, $high, $lowest, $offset) {
+    $current = $values[0];
     $count = 0;
-    for ($i = 0; $i < count($values) - 2; $i++) {
-        if ($current == $high) {
+    for ($i = 0; $i < count($values); $i++) {
+        if ($current === $high) {
             $new = ($low + $high) / 2;
-            $temp["$new"] = 0;
-            $medianValues[$count] = $new;
+            splitHelper($new, $count, $temp, $medianValues);
             $count++;
-            $temp["$low"] = 0;
-            $medianValues[$count] = $low;
+            splitHelper($low, $count, $temp, $medianValues);
             $count++;
-            $current = $high;
+            $current = $values[$i];
         } else if ($values[$i] != 0) {
-            $temp["$values[$i]"] = 0;
-            $medianValues[$count] = $values[$i];
+            splitHelper($values[$i], $count, $temp, $medianValues);
             $count++;
             $current = $values[$i];
         }
     }
+    $temp["$lowest"] = 0;
+    if ($offset === 2) {
+        $temp["0"] = 0;
+    }
 }
 
-function combineSmallest($values, $counts, $original) {
+function splitHelper ($value, $count, &$temp, &$medianValues) {
+    $temp["$value"] = 0;
+    $medianValues[$count] = $value;
+}
+
+function combineSmallest($values, $counts, $original, $offset) {
     $lowest = getLowest($original) - 0.01;
     $smallest = 219;
     $current = 0;
     $low = 0;
     $high = 0;
-    for ($i = 1; $i < count($counts) - 2; $i++) {
+    for ($i = 1; $i < count($counts) - $offset; $i++) {
         if ($counts[$i] + $counts[$i + 1] < $smallest) {
             $smallest = $counts[$i] + $counts[$i + 1];
             $low = $current;
@@ -165,6 +171,7 @@ function combineSmallest($values, $counts, $original) {
         $current = $values[$i];
     }
     $medianValues = Array();
+    $temp = Array();
     combine($values, $medianValues, $temp, $low, $high);
     $temp["$lowest"] = 0;
     $temp["0"] = 0;
@@ -245,16 +252,16 @@ function getLowest($array) {
                   AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') 
                 ORDER BY ((cases - active - deaths) / population) * 100000 DESC;");
         // get results from the table query
-        $stmt = $db_conn->prepare(SELECT_QUERY);
+        $stmt1 = $db_conn->prepare(SELECT_QUERY);
         // add parameter
-        $stmt->bindParam(':dateParam', $date);
-        $stmt->execute();
+        $stmt1->bindParam(':dateParam', $date);
+        $stmt1->execute();
         // set the resulting array to associative
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        if (!$stmt) {
+        $stmt1->setFetchMode(PDO::FETCH_ASSOC);
+        if (!$stmt1) {
             die("No Table Results");
         }
-        $rows = $stmt->fetchAll();
+        $rows = $stmt1->fetchAll();
         // make standard array
         for ($i = 0; $i < count($rows); $i++) {
             $rowArray[$i] = $rows[$i]["recovered100k"]; 
@@ -290,7 +297,7 @@ function getLowest($array) {
         // calculate median low
         $medianLow = calculate_median($rowLow);
         // create medians low
-        $mediansLow = distribute_values($medianLow, $rowLow, true);
+        $mediansLow = distribute_values($medianLow, $rowLow, false);
         // calulate standard deviation low
         $standardDeviationLow = standard_deviation($rowLow);
         // calculate variance low
@@ -300,7 +307,7 @@ function getLowest($array) {
         // calculate median High
         $medianHigh = calculate_median($rowHigh);
         // create medians High
-        $mediansHigh = distribute_values($medianHigh, $rowHigh, false);
+        $mediansHigh = distribute_values($medianHigh, $rowHigh, true);
         // calulate standard deviation High
         $standardDeviationHigh = standard_deviation($rowHigh);
         // calculate variance High
@@ -310,15 +317,17 @@ function getLowest($array) {
         // combine medians low and medians high
         $arrayCount = 0;
         $lowestValue = 0;
-        if ($mediansLow["0"] == 0) {
+        if ($mediansLow["0"] === 0) {
             $targetCount = 13;
             $scoreLabels = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 
                 'D+', 'D', 'D-', 'F'];
             unset($mediansLow["0"]);
+            $offset = 1;
         } else {
             $targetCount = 14;
             $scoreLabels = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 
                 'C-', 'D+', 'D', 'D-', 'F', '0'];
+            $offset = 2;
         }
         while ($value = current($mediansHigh)) {
             if (key($mediansHigh) === "<") {
@@ -339,8 +348,8 @@ function getLowest($array) {
             $arrayCount++;
             next($mediansLow);
         }
-        if (count($medianOut) < $targetCount) {
-            $temp = splitLargest($medianValues, $medianOut, $rowArray);
+        while (count($medianOut) < $targetCount) {
+            $temp = splitLargest($medianValues, $medianOut, $rowArray, $offset);
             $arrayCount = 0;
             $medianValues = Array();
             $medianOut = Array();
@@ -352,7 +361,7 @@ function getLowest($array) {
             }
         }
         while (count($medianOut) > $targetCount) {
-            $temp = combineSmallest($medianValues, $medianOut, $rowArray);
+            $temp = combineSmallest($medianValues, $medianOut, $rowArray, $offset);
             $arrayCount = 0;
             $medianValues = array();
             $medianOut = array();

@@ -140,7 +140,7 @@ function split($values, &$medianValues, &$temp, $low, $high) {
             $temp["$high"] = 0;
             $medianValues[$count] = $high;
             $count++;
-            $current = $high;
+            $current = $values[$i];;
         } else if ($values[$i] != 0) {
             $temp["$values[$i]"] = 0;
             $medianValues[$count] = $values[$i];
