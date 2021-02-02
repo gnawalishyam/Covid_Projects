@@ -62,128 +62,132 @@ function standard_deviation($aValues, $bSample = false)
     return (float) sqrt($fVariance);
 }
 
-function distribute_values($median, $rowArray) {
+function distribute_values($median, $rowArray, $isHigh) {
+    $highest = max($rowArray) + 0.1;
     $medianSum = floatval($median);
-    $count = 0;
+    if (!$isHigh) {
+        $medianValues[0] = 0;
+        $medians["0"] = 0;
+        $count = 1;
+    } else {
+        $count = 0;
+    }
     while ($medianSum < $rowArray[count($rowArray) - 1] - $median) {
         $medianValues[$count] = $medianSum;
         $medians["$medianSum"] = 0;
         $medianSum += $median;
         $count++;
     }
-    $medians[">"] = 0;
+    $medians["$highest"] = 0;
+    
+    return casesLoop($rowArray, $medians, $medianValues, $highest);
+}
+
+function casesLoop ($rowArray, $medians, $medianValues, $highest) {
     // begin cases loop
     for ($i = 0; $i < count($rowArray); $i++) {
         $isPlaced = false;
+        if (floatval($rowArray[$i]) === 0.0) {
+            $medians["0"]++;
+            continue;
+        }
         for ($j = 0; $j < count($medianValues); $j++) {
-           if ($rowArray[$i] <= $medianValues[$j]) {
+           if (floatval($rowArray[$i]) <= $medianValues[$j]) {
                $medians["$medianValues[$j]"]++;
                $isPlaced = true;
                break;
            }
         }
         if (!$isPlaced) {
-           $medians[">"]++;
+           $medians["$highest"]++;
         }
     }
     return $medians;
 }
 
 function splitLargest($values, $counts, $original) {
-	$largest = 0;
-	$current = 0;
-	$low = 0;
-	$high = 0;
-	for ($i = 0; $i < count($counts); $i++) {
-		if ($counts[$i] > $largest) {
-			$largest = $counts[$i];
-			$low = $current;
-			$high = $values[$i];
-		}
-		$current = $values[$i];
-	}
-	$current = 0;
-	$count = 0;
-	for ($i = 0; $i < count($values); $i++) {
-		if ($current == $low) {
-			$new = ($low + $high) / 2;
-			$temp["$new"] = 0;
-			$medianValues[$count] = $new;
-			$count++;
-			$temp["$high"] = 0;
-			$medianValues[$count] = $high;
-			$count++;
-			$current = $high;
-		} else if ($values[$i] != 0) {
-			$temp["$values[$i]"] = 0;
-			$medianValues[$count] = $values[$i];
-			$count++;
-			$current = $values[$i];
-		}
-	}
-	$temp[">"] = 0;
-	// begin cases loop
-	for ($i = 0; $i < count($original); $i++) {
-		$isPlaced = false;
-		for ($j = 0; $j < count($medianValues); $j++) {
-		   if ($original[$i] <= $medianValues[$j]) {
-			   $temp["$medianValues[$j]"]++;
-			   $isPlaced = true;
-			   break;
-		   }
-		}
-		if (!$isPlaced) {
-		   $temp[">"]++;
-		}
-	}
-	return $temp;
+    $highest = max($original) + 0.1;
+    $largest = 0;
+    $current = 0;
+    $low = 0;
+    $high = 0;
+    for ($i = 1; $i < count($counts); $i++) {
+        if ($counts[$i] > $largest) {
+            $largest = $counts[$i];
+            $low = $current;
+            $high = $values[$i];
+        }
+        $current = $values[$i];
+    }
+    
+    $temp["0"] = 0;
+    $medianValues = Array();
+    split($values, $medianValues, $temp, $low, $high);
+    $temp["$highest"] = 0;
+    
+    return casesLoop($original, $temp, $medianValues, $highest);
+}
+
+function split($values, &$medianValues, &$temp, $low, $high) {
+    $current = 0;
+    $count = 0;
+    for ($i = 1; $i < count($values); $i++) {
+        if ($current == $low) {
+            $new = ($low + $high) / 2;
+            $temp["$new"] = 0;
+            $medianValues[$count] = $new;
+            $count++;
+            $temp["$high"] = 0;
+            $medianValues[$count] = $high;
+            $count++;
+            $current = $high;
+        } else if ($values[$i] != 0) {
+            $temp["$values[$i]"] = 0;
+            $medianValues[$count] = $values[$i];
+            $count++;
+            $current = $values[$i];
+        }
+    }
 }
 
 function combineSmallest($values, $counts, $original) {
-	$smallest = 10000;
-	$current = 0;
-	$low = 0;
-	$high = 0;
-	for ($i = 0; $i < count($counts) - 1; $i++) {
-		if ($counts[$i] + $counts[$i + 1] < $smallest) {
-			$smallest = $counts[$i] + $counts[$i + 1];
-			$low = $current;
-			$high = $values[$i + 1];
-		}
-		$current = $values[$i];
-	}
-	$current = 0;
-	$count = 0;
-	for ($i = 0; $i < count($values); $i++) {
-		if ($current == $low) {
-			$temp["$high"] = 0;
-			$medianValues[$i] = $high;
-			$count++;
-			$current = $high;
-			$i++;
-		} else if ($values[$i] != 0) {
-			$temp["$values[$i]"] = 0;
-			$medianValues[$count] = $values[$i];
-			$count++;
-			$current = $values[$i];
-		}
-	}
-	$temp[">"] = 0;
-	// begin cases loop
-	for ($i = 0; $i < count($original); $i++) {
-		$isPlaced = false;
-		for ($j = 0; $j < count($medianValues); $j++) {
-		   if ($original[$i] <= $medianValues[$j]) {
-			   $temp["$medianValues[$j]"]++;
-			   $isPlaced = true;
-			   break;
-		   }
-		}
-		if (!$isPlaced) {
-		   $temp[">"]++;
-		}
-	}
-	return $temp;
+    $highest = max($original) + 0.1;
+    $smallest = 219;
+    $current = 0;
+    $low = 0;
+    $high = 0;
+    for ($i = 1; $i < count($counts) - 2; $i++) {
+        if ($counts[$i] + $counts[$i + 1] < $smallest) {
+            $smallest = $counts[$i] + $counts[$i + 1];
+            $low = $current;
+            $high = $values[$i + 1];
+        }
+        $current = $values[$i];
+    }
+    $temp["0"] = 0;
+    $medianValues = Array();
+    combine($values, $medianValues, $temp, $low, $high);
+    $temp["$highest"] = 0;
+    return casesLoop($original, $temp, $medianValues, $highest);
+}
+
+function combine($values, &$medianValues, &$temp, $low, $high) {
+    $current = 0;
+    $count = 0;
+    for ($i = 1; $i < count($values); $i++) {
+        if ($current == $low) {
+            $temp["$high"] = 0;
+            $medianValues[$count] = $high;
+            $count++;
+            $current = $high;
+            $i++;
+        } else if ($values[$i] != 0) {
+            $temp["$values[$i]"] = 0;
+            $medianValues[$count] = $values[$i];
+            $count++;
+            $current = $values[$i];
+        }
+    }
 }
 
     //$userDate = filter_input(INPUT_POST, 'date');
@@ -257,7 +261,7 @@ function combineSmallest($values, $counts, $original) {
         // calculate median
         $median = calculate_median($rowArray);
         // create medians
-        $medians = distribute_values($median, $rowArray);
+        $medians = distribute_values($median, $rowArray, false);
         // split arrays at mean
         $rowLowCount = 0;
         $rowHighCount = 0;
@@ -273,7 +277,7 @@ function combineSmallest($values, $counts, $original) {
         // calculate median low
         $medianLow = calculate_median($rowLow);
         // create medians low
-        $mediansLow = distribute_values($medianLow, $rowLow);
+        $mediansLow = distribute_values($medianLow, $rowLow, false);
         // calulate standard deviation low
         $standardDeviationLow = standard_deviation($rowLow);
         // calculate variance low
@@ -283,7 +287,7 @@ function combineSmallest($values, $counts, $original) {
         // calculate median High
         $medianHigh = calculate_median($rowHigh);
         // create medians High
-        $mediansHigh = distribute_values($medianHigh, $rowHigh);
+        $mediansHigh = distribute_values($medianHigh, $rowHigh, true);
         // calulate standard deviation High
         $standardDeviationHigh = standard_deviation($rowHigh);
         // calculate variance High
@@ -293,6 +297,16 @@ function combineSmallest($values, $counts, $original) {
         // combine medians low and medians high
         $arrayCount = 0;
         $highestValue = 0;
+        if ($mediansLow["0"] == 0) {
+            $targetCount = 13;
+            $scoreLabels = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 
+                'D+', 'D', 'D-', 'F'];
+            unset($mediansLow["0"]);
+        } else {
+            $targetCount = 14;
+            $scoreLabels = ['0','A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 
+                'C-', 'D+', 'D', 'D-', 'F'];
+        }
         while ($value = current($mediansLow)) {
             if (key($mediansLow) === ">") {
                 $medianOut[$arrayCount] = $value;
@@ -312,49 +326,39 @@ function combineSmallest($values, $counts, $original) {
             $arrayCount++;
             next($mediansHigh);
         }
-		while (count($medianOut) < 13) {
-			$temp = splitLargest($medianValues, $medianOut, $rowArray);
-			$arrayCount = 0;
-			while ($value = current($temp)) {
-				$medianValues[$arrayCount] = floatval(key($temp));
-				$medianOut[$arrayCount] = $value;
-				$arrayCount++;
-				next($temp);
-			}
-		}
-		while (count($medianOut) > 13) {
-			$temp = combineSmallest($medianValues, $medianOut, $rowArray);
-			$arrayCount = 0;
-			$medianValues = array();
-			$medianOut = array();
-			while ($value = current($temp)) {
-				$medianValues[$arrayCount] = floatval(key($temp));
-				$medianOut[$arrayCount] = $value;
-				$arrayCount++;
-				next($temp);
-			}
-		}
-		$scoreLabels = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+        while (count($medianOut) < $targetCount) {
+            $temp = splitLargest($medianValues, $medianOut, $rowArray);
+            $arrayCount = 0;
+            $medianValues = array();
+            $medianOut = array();
+            while ($value = current($temp)) {
+                $medianValues[$arrayCount] = floatval(key($temp));
+                $medianOut[$arrayCount] = $value;
+                $arrayCount++;
+                next($temp);
+            }
+        }
+        while (count($medianOut) > $targetCount) {
+            $temp = combineSmallest($medianValues, $medianOut, $rowArray);
+            $arrayCount = 0;
+            $medianValues = array();
+            $medianOut = array();
+            while ($value = current($temp)) {
+                $medianValues[$arrayCount] = floatval(key($temp));
+                $medianOut[$arrayCount] = $value;
+                $arrayCount++;
+                next($temp);
+            }
+        }
         // create Json Object
         $jsonObj["date"] = $date;
         $jsonObj["mean"] = $mean;
         $jsonObj["median"] = $median;
         $jsonObj["StandardDeviation"] = $standardDeviation;
         $jsonObj["variance"] = $variance;
-//        $jsonObj["medians"] = $medians;
-//        $jsonObj["meanLow"] = $meanLow;
-//        $jsonObj["medianLow"] = $medianLow;
-//        $jsonObj["StandardDeviationLow"] = $standardDeviationLow;
-//        $jsonObj["varianceLow"] = $varianceLow;
-//        $jsonObj["mediansLow"] = $mediansLow;
-//        $jsonObj["meanHigh"] = $meanHigh;
-//        $jsonObj["medianHigh"] = $medianHigh;
-//        $jsonObj["StandardDeviationHigh"] = $standardDeviationHigh;
-//        $jsonObj["varianceHigh"] = $varianceHigh;
-//        $jsonObj["mediansHigh"] = $mediansHigh;
         $jsonObj["counts"] = $medianOut;
         $jsonObj["labels"] = $scoreLabels;
-		$jsonObj["values"] = $medianValues;
+        $jsonObj["values"] = $medianValues;
         // encode json array
         $json = json_encode($jsonObj, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         /* Return the JSON string. */
