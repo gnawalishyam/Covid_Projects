@@ -27,7 +27,7 @@ package mobi.thalic.covid;
  *
  * @author Gary Larson gary@thalic.mobi
  */
-public class CountryDouble {
+public class CountryDouble implements Comparable {
     // Declare member variables
     private String country;
     private double value;
@@ -46,7 +46,7 @@ public class CountryDouble {
         this.country = country;
         this.value = value;
     }
-    
+
     /**
      * Getter for country
      * @return country
@@ -77,5 +77,11 @@ public class CountryDouble {
      */
     public void setValue(double value) {
         this.value = value;
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        // compare Ascending
+        return Double.compare(this.value, ((CountryDouble)o).getValue());
     }
 }

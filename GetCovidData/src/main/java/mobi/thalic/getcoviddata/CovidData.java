@@ -264,16 +264,28 @@ public class CovidData {
         // create cases10k data
         Map<String, Double> cases10kData = createDataDouble(cases10kList);
         // create cases10k16 data
-        Map<String, Double> cases10k16Data = new HashMap<>();
+        Map<String, Double> cases10k15Data = new HashMap<>();
+        Map<String, Integer> cases10k15Ranks = new HashMap<>();
         if (cases10k16List.size() > 0) {
-            cases10k16Data = createDataDouble(cases10k16List);
+            Map<String, Double> cases10k16Data = 
+                    createDataDouble(cases10k16List);
+            List<CountryDouble> cases10k15List = 
+                createDayAveragesList(cases10kData, cases10k16Data, 15, false);
+            cases10k15Ranks = assignRanksDouble(cases10k15List);
+            cases10k15Data = createDataDouble(cases10k15List);
         }
         // create deaths10k data
         Map<String, Double> deaths10kData = createDataDouble(deaths10kList);
         // create deaths10k data
-        Map<String, Double> deaths10k16Data = new HashMap<>();
+        Map<String, Integer> deaths10k15Ranks = new HashMap<>();
+        Map<String, Double> deaths10k15Data = new HashMap<>();
         if (deaths10k16List.size() > 0) {
-            deaths10k16Data = createDataDouble(deaths10k16List);
+            Map<String, Double> deaths10k16Data = 
+                    createDataDouble(deaths10k16List);
+            List<CountryDouble> deaths10k15List = createDayAveragesList(
+                    deaths10kData, deaths10k16Data, 15, false);
+            deaths10k15Ranks = assignRanksDouble(deaths10k15List);
+            deaths10k15Data = createDataDouble(deaths10k15List);
         }
         // create active10k data
         Map<String, Double> active10kData = createDataDouble(active10kList);
@@ -284,7 +296,6 @@ public class CovidData {
         Map<String, Double> recovered10kData = 
                 createDataDouble(recovered10kList);
         // loop through populations and populate the data into calculations
-        List<Calculations> calcList = new ArrayList<>();
         for (int i = 0; i < populationList.size(); i++) {
             // create a calculations class to hold data
             Calculations calc = new Calculations();
@@ -361,33 +372,64 @@ public class CovidData {
             // set recovered percent score
             calc.setRecoveredPercentScore(recoveredPercentScores.get(country));
             // add cases10k 15 day average data
-            if (cases10k16Data != null && cases10k16Data.size() > 0 && 
-                    cases10k16Data.containsKey(country) && 
-                    cases10kData.get(country) - 
-                    cases10k16Data.get(country) > 0) {
-                calc.setCases10k15(calculateAverage(cases10kData.get(country) - 
-                        cases10k16Data.get(country), 15));
+            if (cases10k15Data.size() > 0 ) {
+                calc.setCases10k15(cases10k15Data.get(country));
             } else {
                 calc.setCases10k15(0.0);
             }
-            calc.setCases10k15Rank(0);
+            if (cases10k15Ranks.size() > 0) {
+                calc.setCases10k15Rank(cases10k15Ranks.get(country));
+            } else {
+                calc.setCases10k15Rank(0);
+            }
             calc.setCases10k15Score("");
             // add deaths10k 15 day average data
-            if (deaths10k16Data != null && deaths10k16Data.size() > 0 && 
-                    deaths10k16Data.containsKey(country) && 
-                    deaths10kData.get(country) - 
-                    deaths10k16Data.get(country) > 0) {
-                calc.setDeaths10k15(
-                        calculateAverage(deaths10kData.get(country) - 
-                        deaths10k16Data.get(country), 15));
+            if (deaths10k15Data.size() > 0) {
+                calc.setDeaths10k15(deaths10k15Data.get(country));
             } else {
                 calc.setDeaths10k15(0.0);
             }
-            calc.setDeaths10k15Rank(0);
+            if (deaths10k15Ranks.size() > 0) {
+                calc.setDeaths10k15Rank(deaths10k15Ranks.get(country));
+            } else {
+                calc.setDeaths10k15Rank(0);
+            }
             calc.setDeaths10k15Score("");
             // add calculations to calculations list
             databaseUtilities.insertCalculation(conn, calc);
         }
+    }
+    
+    /**
+     * Method to create a list of an average of ? days of data
+     * @param currentList of data
+     * @param oldMap of data number of days plus 1
+     * @param days to average
+     * @return sorted list of of country and double values
+     */
+    private List<CountryDouble> createDayAveragesList(
+            Map<String, Double> currentList, Map<String, Double> oldMap, 
+            int days, boolean isReverse) {
+        List<CountryDouble> resultList = new ArrayList<>();
+        currentList.entrySet().stream().map(entry -> {
+            double temp = 0.0;
+            if (oldMap.containsKey(entry.getKey()))
+                temp = calculateAverage(entry.getValue() - 
+                        oldMap.get(entry.getKey()), 15);
+            if (temp < 0.0) {
+                temp = 0.0;
+            }
+            CountryDouble listEntry = new CountryDouble(entry.getKey(), temp);
+            return listEntry;
+        }).forEachOrdered(listEntry -> {
+            resultList.add(listEntry);
+        }); 
+        if (isReverse) {
+           Collections.sort(resultList, Collections.reverseOrder());
+        } else {
+            Collections.sort(resultList);
+        }
+        return resultList;
     }
     
     /**

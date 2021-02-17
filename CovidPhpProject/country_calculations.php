@@ -62,11 +62,14 @@
         
         define ("TABLE_QUERY", "SELECT country, pc_population, pc_mortality, 
             pc_deaths, pc_active_cases, pc_recovered, pc_total_cases, 
-            survival_rate, population,
-            population_rank, deaths10k, deaths10k_rank, deaths10k_score, 
+            survival_rate, active_percent, recovered_percent, 
+            recovered_percent_rank, recovered_percent_score, population,
+            population_rank, deaths10k, deaths10k_rank, deaths10k_score,
+            deaths10k_15_days, deaths10k_15_days_rank, deaths10k_15_days_score,
             active10k, active10k_rank, active10k_score, recovered10k, 
             recovered10k_rank, recovered10k_score, cases10k, cases10k_rank,
-            cases10k_score, `rank`, score 
+            cases10k_score, cases10k_15_days, cases10k_15_days_rank, 
+            cases10k_15_days_score, `rank`, score
             FROM country_calculations 
             WHERE `date` = :dateParam
             ORDER BY country;");
@@ -91,11 +94,18 @@
             echo "<td>" . number_format(floatval($row["pc_recovered"]), 2) . "</td>";
             echo "<td>" . number_format(floatval($row["pc_total_cases"]), 2) . "</td>";
             echo "<td>" . number_format(floatval($row["survival_rate"]), 2) . "</td>";
+            echo "<td>" . number_format(floatval($row["active_percent"]), 2) . "</td>";
+            echo "<td>" . number_format(floatval($row["recovered_percent"]), 2) . "</td>";
+            echo "<td>" . number_format(intval($row["recovered_percent_rank"])) . "</td>";
+            echo "<td>" . $row["recovered_percent_score"] . "</td>";
             echo "<td>" . number_format(intval($row["population"])) . "</td>";
             echo "<td>" . number_format(intval($row["population_rank"])) . "</td>";
             echo "<td>" . number_format(floatval($row["deaths10k"]), 2) . "</td>";
             echo "<td>" . number_format(intval($row["deaths10k_rank"])) . "</td>";
             echo "<td>" . $row["deaths10k_score"] . "</td>";
+            echo "<td>" . number_format(floatval($row["deaths10k_15_days"]), 2) . "</td>";
+            echo "<td>" . number_format(intval($row["deaths10k_15_days_rank"])) . "</td>";
+            echo "<td>" . $row["deaths10k_15_days_score"] . "</td>";
             echo "<td>" . number_format(floatval($row["active10k"]), 2) . "</td>";
             echo "<td>" . number_format(intval($row["active10k_rank"])) . "</td>";
             echo "<td>" . $row["active10k_score"] . "</td>";
@@ -105,6 +115,9 @@
             echo "<td>" . number_format(floatval($row["cases10k"]), 2) . "</td>";
             echo "<td>" . number_format(intval($row["cases10k_rank"])) . "</td>";
             echo "<td>" . $row["cases10k_score"] . "</td>";
+            echo "<td>" . number_format(floatval($row["cases10k_15_days"]), 2) . "</td>";
+            echo "<td>" . number_format(intval($row["cases10k_15_days_rank"])) . "</td>";
+            echo "<td>" . $row["cases10k_15_days_score"] . "</td>";
             echo "<td>" . number_format(intval($row["rank"])) . "</td>";
             echo "<td>" . $row["score"] . "</td>";
             echo "<td>" . $date . "</td>";
