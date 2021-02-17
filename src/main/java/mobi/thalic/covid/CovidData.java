@@ -212,6 +212,7 @@ public class CovidData {
     
     /**
      * Method to create and add calculations to the database
+     * @param date of calculations
      */
     public void runCalculations(String date) {
         mResults.addResults("Starting run calculations!");
@@ -254,9 +255,15 @@ public class CovidData {
         // get cases10k list from database
         List<CountryDouble> cases10kList = 
                 databaseUtilities.getCases10kData(conn, date);
+        // get cases10k16 list from database
+        List<CountryDouble> cases10k16List = 
+                databaseUtilities.getCases10kData16(conn, date);
         // get deaths10k from database
         List<CountryDouble> deaths10kList = 
                 databaseUtilities.getDeaths10kData(conn, date);
+        // get deaths10k16 from database
+        List<CountryDouble> deaths10k16List = 
+                databaseUtilities.getDeaths10kData16(conn, date);
         // get active10k from database
         List<CountryDouble> active10kList = 
                 databaseUtilities.getActive10kData(conn, date);
@@ -325,8 +332,18 @@ public class CovidData {
         Map<String, Long> populationData = createDataLong(populationList);
         // create cases10k data
         Map<String, Double> cases10kData = createDataDouble(cases10kList);
+        // create cases10k16 data
+        Map<String, Double> cases10k16Data = new HashMap<>();
+        if (cases10k16List.size() > 0) {
+            cases10k16Data = createDataDouble(cases10k16List);
+        }
         // create deaths10k data
         Map<String, Double> deaths10kData = createDataDouble(deaths10kList);
+        // create deaths10k data
+        Map<String, Double> deaths10k16Data = new HashMap<>();
+        if (deaths10k16List.size() > 0) {
+            deaths10k16Data = createDataDouble(deaths10k16List);
+        }
         // create active10k data
         Map<String, Double> active10kData = createDataDouble(active10kList);
         // create recovered percent data
@@ -412,6 +429,31 @@ public class CovidData {
             calc.setRecoveredPercentRank(recoveredPercentRanks.get(country));
             // set recovered percent score
             calc.setRecoveredPercentScore(recoveredPercentScores.get(country));
+            // add cases10k 15 day average data
+            if (cases10k16Data != null && cases10k16Data.size() > 0 && 
+                    cases10k16Data.containsKey(country) && 
+                    cases10kData.get(country) - 
+                    cases10k16Data.get(country) > 0) {
+                calc.setCases10k15(calculateAverage(cases10kData.get(country) - 
+                        cases10k16Data.get(country), 15));
+            } else {
+                calc.setCases10k15(0.0);
+            }
+            calc.setCases10k15Rank(0);
+            calc.setCases10k15Score("");
+            // add deaths10k 15 day average data
+            if (deaths10k16Data != null && deaths10k16Data.size() > 0 && 
+                    deaths10k16Data.containsKey(country) && 
+                    deaths10kData.get(country) - 
+                    deaths10k16Data.get(country) > 0) {
+                calc.setDeaths10k15(
+                        calculateAverage(deaths10kData.get(country) - 
+                        deaths10k16Data.get(country), 15));
+            } else {
+                calc.setDeaths10k15(0.0);
+            }
+            calc.setDeaths10k15Rank(0);
+            calc.setDeaths10k15Score("");
             // add calculations to calculations list
             databaseUtilities.insertCalculation(conn, calc);
         }
@@ -429,6 +471,25 @@ public class CovidData {
             return 0.0;
         }
         double tempDouble = ((double) number1 / number2) * 100;
+        // convert to string
+        String tempString = String.format(Locale.getDefault(), "%.2f", tempDouble);
+        // convert string to double and return
+        Double tempDouble1 = Double.valueOf(tempString);
+        return tempDouble1;
+    }
+    
+    /**
+     * Method to calculate a percentage with 2 decimal places
+     * @param number1 dividend
+     * @param number2 divisor
+     * @return 
+     */
+    private double calculateAverage(double number, int quantity) {
+        // calculate average
+        if (number == 0 || quantity == 0) {
+            return 0.0;
+        }
+        double tempDouble = number / quantity;
         // convert to string
         String tempString = String.format(Locale.getDefault(), "%.2f", tempDouble);
         // convert string to double and return

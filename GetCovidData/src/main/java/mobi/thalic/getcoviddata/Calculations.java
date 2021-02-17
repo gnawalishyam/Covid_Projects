@@ -56,6 +56,15 @@ public class Calculations {
     private double survivalRate;
     private double activePercent;
     private double recoveredPercent;
+    private int recoveredPercentRank;
+    private String recoveredPercentScore;
+    private double cases10k15;
+    private int cases10k15Rank;
+    private String cases10k15Score;
+    private double deaths10k15;
+    private int deaths10k15Rank;
+    private String deaths10k15Score;
+    
     
     /**
      * Default Constructor
@@ -375,7 +384,7 @@ public class Calculations {
     }
     
     /**
-     * Setter for total cases per 10,000 population score
+     * Setter for total cases per 10,000 population
      * @param cases10k to set
      */
     public void setCases10k(double cases10k) {
@@ -492,5 +501,133 @@ public class Calculations {
      */
     public void setRecoveredPercent(double recoveredPercent) {
         this.recoveredPercent = recoveredPercent;
+    }
+    
+    /**
+     * Getter for recovered percent rank
+     * @return recovered percent rank
+     */
+    public int getRecoveredPercentRank() {
+        return recoveredPercentRank;
+    }
+    
+    /**
+     * Setter for recovered percent rank
+     * @param rank  to set
+     */
+    public void setRecoveredPercentRank(int rank) {
+        this.recoveredPercentRank = rank;
+    }
+    
+    /**
+     * Getter for recovered percent score
+     * @return recovered percent score
+     */
+    public String getRecoveredPercentScore() {
+        return recoveredPercentScore;
+    }
+    
+    /**
+     * Setter for recovered percent score
+     * @param score to set
+     */
+    public void setRecoveredPercentScore(String score) {
+        this.recoveredPercentScore = score;
+    }
+    
+    /**
+     * Getter for total cases per 10,000 population average over last 15 days
+     * @return total cases per 10,000 population average over last 15 days
+     */
+    public double getCases10k15() {
+        return cases10k15;
+    }
+    
+    /**
+     * Setter for total cases per 10,000 population average over last 15 days 
+     * @param cases10k to set
+     */
+    public void setCases10k15(double cases10k) {
+        this.cases10k15 = cases10k;
+    }
+    
+    /**
+     * Getter for total cases per 10,000 population rank average over last 15 days
+     * @return total cases per 10,000 population rank average over last 15 days
+     */
+    public int getCases10k15Rank() {
+        return cases10k15Rank;
+    }
+    
+    /**
+     * Setter for total cases per 10,000 population rank average over last 15 days
+     * @param rank to set
+     */
+    public void setCases10k15Rank(int rank) {
+        this.cases10k15Rank = rank;
+    }
+    
+    /**
+     * Getter for total cases per 10,000 population score average over last 15 days
+     * @return total cases per 10,000 population score
+     */
+    public String getCases10k15Score() {
+        return cases10k15Score;
+    }
+    
+    /**
+     * Setter for total cases per 10,000 population score average over last 15 days
+     * @param score to set
+     */
+    public void setCases10k15Score(String score) {
+        this.cases10k15Score = score;
+    }
+    
+    /**
+     * Getter for deaths per 10,000 population average over last 15 days
+     * @return deaths per 10,000 population average over last 15 days
+     */
+    public double getDeaths10k15() {
+        return deaths10k15;
+    }
+    
+    /**
+     * Setter for deaths per 10,000 population average over last 15 days
+     * @param deaths10k to set
+     */
+    public void setDeaths10k15(double deaths10k) {
+        this.deaths10k15 = deaths10k;
+    }
+    
+    /**
+     * Getter for deaths per 10,000 population rank average over last 15 days
+     * @return deaths per 10,000 population rank average over last 15 days
+     */
+    public int getDeaths10k15Rank() {
+        return deaths10k15Rank;
+    }
+    
+    /**
+     * Setter for deaths per 10,000 population rank average over last 15 days
+     * @param rank to set
+     */
+    public void setDeaths10k15Rank(int rank) {
+        this.deaths10k15Rank = rank;
+    }
+    
+    /**
+     * Getter for deaths per 10,000 population score average over last 15 days
+     * @return deaths per 10,000 population score average over last 15 days
+     */
+    public String getDeaths10k15Score() {
+        return deaths10k15Score;
+    }
+    
+    /**
+     * Setter for deaths per 10,000 population score average over last 15 days
+     * @param score to set
+     */
+    public void setDeaths10k15Score(String score) {
+        this.deaths10k15Score = score;
     }
 }

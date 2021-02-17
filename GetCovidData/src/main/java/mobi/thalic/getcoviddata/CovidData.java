@@ -23,9 +23,7 @@
  */
 package mobi.thalic.getcoviddata;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+
 import java.sql.Connection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -182,27 +180,30 @@ public class CovidData {
         // get active from database
         Map<String, Long> activeData = 
                 databaseUtilities.getActiveData(conn, date);
-        // get recovered from database
-        Map<String, Long> recoveredData = 
-                databaseUtilities.getRecoveredData(conn, date);
         // get population list from database
         List<CountryLong> populationList = 
                 databaseUtilities.getPopulationData(conn, date);
         // get cases10k list from database
         List<CountryDouble> cases10kList = 
                 databaseUtilities.getCases10kData(conn, date);
+        // get cases10k16 list from database
+        List<CountryDouble> cases10k16List = 
+                databaseUtilities.getCases10kData16(conn, date);
         // get deaths10k from database
         List<CountryDouble> deaths10kList = 
                 databaseUtilities.getDeaths10kData(conn, date);
+        // get deaths10k16 from database
+        List<CountryDouble> deaths10k16List = 
+                databaseUtilities.getDeaths10kData16(conn, date);
         // get active10k from database
         List<CountryDouble> active10kList = 
                 databaseUtilities.getActive10kData(conn, date);
         // get recovered10k from database
         List<CountryDouble> recovered10kList = 
                 databaseUtilities.getRecovered10kData(conn, date);
-        // get mortality from database
-        Map<String, Double> mortalityData = 
-                databaseUtilities.getMortalityData(conn, date);
+        // get recovered percent data
+        List<CountryDouble> recoveredPercentList = 
+                databaseUtilities.getRecoveredPercentData(conn, date);
         // create population ranks
         Map<String, Integer> populationRanks = 
                 assignRanksLong(populationList);
@@ -218,6 +219,9 @@ public class CovidData {
         // create recovered10k ranks
         Map<String, Integer> recovered10kRanks = 
                 assignRanksDouble(recovered10kList);
+        // create recovered percent ranks
+        Map<String, Integer> recoveredPercentRanks = 
+                assignRanksDouble(recoveredPercentList);
         // create case10k medians
         Map<String, Double> cases10kMedians = createMediansAsc(cases10kList);
         // create cases10k scores
@@ -239,12 +243,14 @@ public class CovidData {
         // create recovered10k scores
         Map<String, String> recovered10kScores = 
                 createScoresDesc(recovered10kMedians, recovered10kList);
+        // create recovered percent scores
+        Map<String, String> recoveredPercentScores = 
+                createRecoveredPercentScores(recoveredPercentList);
         // create overall scores
         List<CountryDouble> overallScoresList = 
-                createOverallScores(populationList, cases10kScores, 
-                        deaths10kScores, active10kScores);
+                createOverallScores(populationList, deaths10kScores, 
+                        active10kScores);
         // create overall score ranks
-        // create recovered10k ranks
         Map<String, Integer> overallScoresRanks = 
                 assignRanksDouble(overallScoresList);
         // create overall scores medians
@@ -253,14 +259,27 @@ public class CovidData {
         // create overall scores
         Map<String, String> overallScores = 
                 createScoresDesc(overallScoresMedians, overallScoresList);
-        // create populations
+        // create populations data
         Map<String, Long> populationData = createDataLong(populationList);
-        // create cases10k
+        // create cases10k data
         Map<String, Double> cases10kData = createDataDouble(cases10kList);
-        // create deaths10k
+        // create cases10k16 data
+        Map<String, Double> cases10k16Data = new HashMap<>();
+        if (cases10k16List.size() > 0) {
+            cases10k16Data = createDataDouble(cases10k16List);
+        }
+        // create deaths10k data
         Map<String, Double> deaths10kData = createDataDouble(deaths10kList);
-        // create active10k
+        // create deaths10k data
+        Map<String, Double> deaths10k16Data = new HashMap<>();
+        if (deaths10k16List.size() > 0) {
+            deaths10k16Data = createDataDouble(deaths10k16List);
+        }
+        // create active10k data
         Map<String, Double> active10kData = createDataDouble(active10kList);
+        // create recovered percent data
+        Map<String, Double> recoveredPercentData = 
+                createDataDouble(recoveredPercentList);
         // create recovered10k
         Map<String, Double> recovered10kData = 
                 createDataDouble(recovered10kList);
@@ -287,13 +306,15 @@ public class CovidData {
             calc.setPercentActive(calculatePercent(activeData.get(country), 
                     worldData.getActive()));
             // set percent of recovered cases
-            calc.setPercentRecovered(calculatePercent(recoveredData.get(country), 
+            calc.setPercentRecovered(calculatePercent(casesData.get(country) - 
+                    activeData.get(country) - deathsData.get(country), 
                     worldData.getRecovered()));
             // set percent of world total cases
             calc.setPercentCases(calculatePercent(casesData.get(country),  
                     worldData.getCases()));
             // set percent of mortality
-            calc.setPercentMortality(mortalityData.get(country));
+            calc.setPercentMortality(calculatePercent(deathsData.get(country), 
+                    casesData.get(country) - activeData.get(country)));
             // set population
             calc.setPopulation(populationData.get(country));
             // set population rank
@@ -327,17 +348,109 @@ public class CovidData {
             // set overall score
             calc.setScore(overallScores.get(country));
             // calculate and set survival rate
-            calc.setSurvivalRate(calculatePercent(recoveredData.get(country), 
-                    recoveredData.get(country) + deathsData.get(country)));
+            calc.setSurvivalRate(calculatePercent(casesData.get(country) - 
+                    activeData.get(country) - deathsData.get(country), 
+                    casesData.get(country) - activeData.get(country)));
             // calculate and set active percent
             calc.setActivePercent(calculatePercent(activeData.get(country), 
                     casesData.get(country)));
-            // calculate and set recovered percent
-            calc.setRecoveredPercent(calculatePercent(
-                    recoveredData.get(country), casesData.get(country)));
+            // set recovered percent
+            calc.setRecoveredPercent(recoveredPercentData.get(country));
+            // set recovered percent rank
+            calc.setRecoveredPercentRank(recoveredPercentRanks.get(country));
+            // set recovered percent score
+            calc.setRecoveredPercentScore(recoveredPercentScores.get(country));
+            // add cases10k 15 day average data
+            if (cases10k16Data != null && cases10k16Data.size() > 0 && 
+                    cases10k16Data.containsKey(country) && 
+                    cases10kData.get(country) - 
+                    cases10k16Data.get(country) > 0) {
+                calc.setCases10k15(calculateAverage(cases10kData.get(country) - 
+                        cases10k16Data.get(country), 15));
+            } else {
+                calc.setCases10k15(0.0);
+            }
+            calc.setCases10k15Rank(0);
+            calc.setCases10k15Score("");
+            // add deaths10k 15 day average data
+            if (deaths10k16Data != null && deaths10k16Data.size() > 0 && 
+                    deaths10k16Data.containsKey(country) && 
+                    deaths10kData.get(country) - 
+                    deaths10k16Data.get(country) > 0) {
+                calc.setDeaths10k15(
+                        calculateAverage(deaths10kData.get(country) - 
+                        deaths10k16Data.get(country), 15));
+            } else {
+                calc.setDeaths10k15(0.0);
+            }
+            calc.setDeaths10k15Rank(0);
+            calc.setDeaths10k15Score("");
             // add calculations to calculations list
             databaseUtilities.insertCalculation(conn, calc);
         }
+    }
+    
+    /**
+     * Method to create scores
+     * @param list of values
+     * @return scores
+     */
+    private Map<String, String> createRecoveredPercentScores(
+            List<CountryDouble> list) {
+        Map<String, String> scores = new HashMap<>();
+        String score;
+        
+        for (int i = 0; i < list.size(); i++) {
+            double value = list.get(i).getValue();
+            if (value > 96.0) {
+                score = "A+";
+            } else if (value > 92.0) {
+                score = "A";
+            } else if (value > 86.0) {
+                score = "A-";
+            } else if (value > 82.0) {
+                score = "B+";
+            } else if (value > 78.0) {
+                score = "B";
+            } else if (value > 74.0) {
+                score = "B-";
+            } else if (value > 70.0) {
+                score = "C+";
+            } else if (value > 66.0) {
+                score = "C";
+            } else if (value > 62.0) {
+                score = "C-";
+            } else if (value > 58.0) {
+                score = "D+";
+            } else if (value > 54.0) {
+                score = "D";
+            } else if (value > 50.0) {
+                score = "D-";
+            } else {
+                score = "F";
+            }
+            scores.put(list.get(i).getCountry(), score);
+        }
+        return scores;
+    }
+    
+    /**
+     * Method to calculate a percentage with 2 decimal places
+     * @param number1 dividend
+     * @param number2 divisor
+     * @return 
+     */
+    private double calculateAverage(double number, int quantity) {
+        // calculate average
+        if (number == 0 || quantity == 0) {
+            return 0.0;
+        }
+        double tempDouble = number / quantity;
+        // convert to string
+        String tempString = String.format(Locale.getDefault(), "%.2f", tempDouble);
+        // convert string to double and return
+        Double tempDouble1 = Double.valueOf(tempString);
+        return tempDouble1;
     }
     
     /**
@@ -420,8 +533,7 @@ public class CovidData {
      * @return sorted country scores list
      */
     private List<CountryDouble> createOverallScores(List<CountryLong> list, 
-            Map<String, String> score1, Map<String, String> score2, 
-            Map<String, String> score3) {
+            Map<String, String> score1, Map<String, String> score2) {
         // declare variables
         List<CountryDouble> countryScoresList = new ArrayList<>();
         Map<String, Double> scoresMap = new HashMap<>();
@@ -431,9 +543,9 @@ public class CovidData {
             // get country
               String country = list.get(i).getCountry();
               // calculate overall score
-              double score = calculatePercent((getScoreValue(score1.get(country)) + 
-                      getScoreValue(score2.get(country)) + 
-                      getScoreValue(score3.get(country))) / 3.0);
+              double score = calculatePercent(
+                      (getScoreValue(score1.get(country)) + 
+                      getScoreValue(score2.get(country))) / 2.0);
               // put country and overall score in map
               scoresMap.put(country, score);
               // put score in list to be reordered

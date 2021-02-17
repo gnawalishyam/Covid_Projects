@@ -45,7 +45,9 @@
             recovered10k, recovered10k_rank, recovered10k_score, cases10k,
             cases10k_rank, cases10k_score, `rank`, score, population, 
             survival_rate, active_percent, recovered_percent, 
-            recovered_percent_rank, recovered_percent_score 
+            recovered_percent_rank, recovered_percent_score, cases10k_15_days,
+            deaths10k_15_days, cases10k_15_days_rank, deaths10k_15_days_rank,
+            cases10k_15_days_score, deaths10k_15_days_score
             FROM country_calculations 
             WHERE `date` = (SELECT MAX(`date`) FROM country_calculations);");
         
@@ -117,11 +119,17 @@
                     $rows[$i]["cases10k_score"];
             $jsonEntry["rank"] = intval($rows[$i]["rank"]);
             $jsonEntry["score"] = $rows[$i]["score"];
-            $jsonEntry["survivalRate"] = $rows[$i]["survival_rate"];
-            $jsonEntry["activePercent"] = $rows[$i]["active_percent"];
-            $jsonEntry["recoveredPercent"] = $rows[$i]["recovered_percent"];
+            $jsonEntry["survivalRate"] = floatval($rows[$i]["survival_rate"]);
+            $jsonEntry["activePercent"] = floatval($rows[$i]["active_percent"]);
+            $jsonEntry["recoveredPercent"] = floatval($rows[$i]["recovered_percent"]);
             $jsonEntry["recoveredPercentRank"] = $rows[$i]["recovered_percent_rank"];
             $jsonEntry["recoveredPercentScore"] = $rows[$i]["recovered_percent_score"];
+            $jsonEntry["cases10k15Days"] = floatval($rows[$i]["cases10k_15_days"]);
+            $jsonEntry["cases10k15DaysRank"] = intval($rows[$i]["cases10k_15_days_rank"]);
+            $jsonEntry["cases10k15DaysScore"] = $rows[$i]["cases10k_15_days_score"];
+            $jsonEntry["deaths10k15Days"] = floatval($rows[$i]["deaths10k_15_days"]);
+            $jsonEntry["deaths10k15DaysRank"] = intval($rows[$i]["deaths10k_15_days_rank"]);
+            $jsonEntry["deaths10k15DaysScore"] = $rows[$i]["deaths10k_15_days_score"];
             // add entry to array
             $jsonArray[$i] = $jsonEntry;
         }
