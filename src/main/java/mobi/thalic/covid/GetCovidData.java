@@ -41,12 +41,13 @@ public class GetCovidData {
         //covidData.createStateDailies();
         //String result = covidData.createCountryDailies();
         //covidData.processWorldometerScrape();
-        covidData.createCalculations();
+        //covidData.createCalculations();
         //covidData.createCSVFile();
         //covidData.getStatData();
         //covidData.runCalculations("2020-12-28");
         //covidData.runCalculationsYesterday();
         //JSONUtilities.processJsonArray();
+        covidData.getOwidData();
         System.out.println(results.getResults());
     }
 }

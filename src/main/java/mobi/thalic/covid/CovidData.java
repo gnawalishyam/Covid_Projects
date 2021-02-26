@@ -67,7 +67,52 @@ public class CovidData {
         csvUtilities = new CSVUtilities(mResults);
     }
     
-    
+    public void getOwidData() {
+        List<Owid> owidList = jsonUtilities.processOwidFullJson();
+        if (owidList.size() > 0) {
+            owidList.stream().map(owid -> {
+                int isoResults;
+                do {
+                    isoResults = databaseUtilities.isIsoCode(owid.getIsoCode());
+                    if (isoResults == databaseUtilities.RETURN_FALSE) {
+                        int countryResults;
+                        do {
+                            countryResults = databaseUtilities.insertOwidCountry(
+                                    owid.getIsoCode(), owid.getContinent(),
+                                    owid.getLocation(), owid.getPopulation(),
+                                    owid.getPopulation100k());
+                            if (countryResults == databaseUtilities.RETURN_FALSE) {
+                                mResults.addResults("getOwidData Insert Country Failed" +
+                                        " " + owid.getIsoCode());
+                            }
+                        } while (countryResults == databaseUtilities.RETURN_ERROR);
+                    }
+                } while (isoResults == databaseUtilities.RETURN_ERROR);
+                return owid;
+            }).forEachOrdered(owid -> {
+                owid.getOwidDaily().forEach(daily -> {
+                    int isoDateResults;
+                    do {
+                        isoDateResults = databaseUtilities.isDaily(owid.getIsoCode(),
+                                daily.getDate());
+                        if (isoDateResults == databaseUtilities.RETURN_FALSE) {
+                            int dailyResults;
+                            do {
+                                dailyResults = databaseUtilities.insertOwidDaily(
+                                        owid.getIsoCode(), daily, owid.getPopulation100k());
+                                if (dailyResults == databaseUtilities.RETURN_FALSE) {
+                                    mResults.addResults("getOwidData Insert Daily "
+                                            + "Failed Code:  Code: " +
+                                            owid.getIsoCode() + " Date: " +
+                                            daily.getDate());
+                                }
+                            } while (dailyResults == databaseUtilities.RETURN_ERROR);
+                        }
+                    } while(isoDateResults == databaseUtilities.RETURN_ERROR);
+                });
+            });
+        }
+    }
     
     /**\
      * Method to create a csv file of the latest totals
