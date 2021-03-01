@@ -90,7 +90,7 @@ public class OwidDaily {
     }
     
     public long getTotalTests() {
-        return this.totalDeaths;
+        return this.totalTests;
     }
     
     public void setTotalTests(long totalTests) {

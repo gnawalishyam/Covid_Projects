@@ -599,46 +599,6 @@ public class CovidData {
     }
     
     /**
-     * Method to create overall ranks
-     * @param list to use
-     * @param rank1 to add
-     * @param rank2 to add
-     * @param rank3 to add
-     * @return overall ranks
-     */
-    private Map<String, Integer> createOverallRanks (List<CountryLong> list, 
-            Map<String, Integer> rank1, Map<String, Integer> rank2, 
-            Map<String, Integer> rank3) {
-        // Declare country ranks map
-        Map<String, Integer> countryRanks = new HashMap<>();
-        // declare rank list
-        List<Integer> rankList = new ArrayList<>();
-        // declare rank data map
-        Map<String, Integer> rankData = new HashMap<>();
-        // loop through all countries
-        for (int i = 0; i < list.size(); i++) {
-            // get the country
-            String country = list.get(i).getCountry();
-            // initialize and get all ranks
-            int allRanks = rank1.get(country) + rank2.get(country) + 
-                    rank3.get(country);
-            rankData.put(country, allRanks);
-            rankList.add(allRanks);
-        }
-        Collections.sort(rankList);
-        Map<Integer, Integer> ranks = new HashMap<>();
-        for (int i = 0; i < rankList.size(); i++) {
-            ranks.put(rankList.get(i), i + 1);
-        }
-        
-        for (int i = 0; i < list.size(); i++) {
-            countryRanks.put(list.get(i).getCountry(), 
-                    ranks.get(rankData.get(list.get(i).getCountry())));
-        }
-        return countryRanks;
-    }
-    
-    /**
      * Method to create overall score and return in descending sorted country 
      * double list
      * @param list with countries to iterate through
@@ -721,40 +681,6 @@ public class CovidData {
             default:
                 return 0.0;
         }
-    }
-    
-    /**
-     * Method to get score from a value
-     * @param value to get score for
-     * @return score of the value
-     */
-    private String getScore(double value) {
-        if (value > 4.0) {
-            return "A+";
-        } else if (value > 3.67) {
-            return "A";
-        } else if (value > 3.33) {
-            return "A-";
-        } else if (value > 3.0) {
-            return "B+";
-        } else if (value > 2.67) {
-            return "B";
-        } else if (value > 2.33) {
-            return "B-";
-        } else if (value > 2.0) {
-            return "C+";
-        } else if (value > 1.67) {
-            return "C";
-        } else if (value > 1.33) {
-            return "C-";
-        } else if (value > 1.0) {
-            return "D+";
-        } else if (value > 0.67) {
-            return "D";
-        } else if (value > 0.33) {
-            return "D-";
-        } 
-        return "F";
     }
     
     /**
@@ -1142,38 +1068,6 @@ public class CovidData {
         return conn;
     }
     
-//    /**
-//     * Method to add statistiques countries to the database
-//     * @param lists to be added
-//     * @return 
-//     */
-//    public String addStatCountries(List<List<String>> lists) {
-//        // Declare variables
-//        Connection conn = null;
-//        String results = "Done";
-//        Set<String> set = new HashSet<>();
-//        lists.forEach(strings -> {
-//            set.add(strings.get(2));
-//        });
-//        try {
-//            conn = getDatabaseConnection();
-//            for(String string : set) {
-//                databaseUtilities.insertStatCountry(conn, string);
-//            }
-//        } catch (SQLException ex) {
-//            results = ex.getMessage();
-//        } finally {
-//            if (conn != null) {
-//                try {
-//                    databaseUtilities.closeConnection(conn);
-//                } catch (SQLException e) {
-//                    System.out.println(e.getMessage());
-//                }
-//            }
-//        }
-//        return results;
-//    }
-    
     /**
      * Method to add statistiques countries data to the database
      */
@@ -1181,7 +1075,7 @@ public class CovidData {
         // Declare variables
         Connection conn;
         List<List<String>> lists;
-        String country = "";
+        //String country;
         java.sql.Date maxDate = null, mDate = null;
         int countryId = 0, id;
         //lists = jsonUtilities.processJsonArray();
@@ -1264,7 +1158,6 @@ public class CovidData {
         // Declare constants
         final String WORLDOMETER_US = 
                 "https://www.worldometers.info/coronavirus/country/us/";
-        final String US_BASE_NAME = "us_covid_";
         
         // scrape WorldOMeter for United States Table
         ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
@@ -1296,7 +1189,6 @@ public class CovidData {
         // Declare constants
         final String WORLDOMETER_ALL = 
                 "https://www.worldometers.info/coronavirus/";
-        final String WORLD_BASE_NAME = "world_covid_";
         
         // Scrape world table
         ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
@@ -1313,16 +1205,6 @@ public class CovidData {
             mResults.addResults( 
                     "Successfully acquired world covid data");
         }
-    }
-
-    /**
-     * Method to generate a file name
-     * @param baseName to use
-     * @return full file name
-     */
-    private String createFileName(String baseName) {
-        // put file name together and return
-        return PATH + baseName + YESTERDAY + ".csv";
     }
 
     /**
@@ -1425,10 +1307,6 @@ public class CovidData {
             List<List<String>> lists) {
         // Declare variables
         List<List<String>> newLists = new ArrayList<>();
-        // initialize counter for total population
-        long totalPopulation = 0L;
-        String temp;
-        long population;
         // loop through lists
         for (int i = 0; i < lists.size(); i++) {
             // eliminate unnecessary columns
@@ -1451,16 +1329,6 @@ public class CovidData {
         updatePopulation(conn, "UnitedStates", newLists);
         return newLists;
     }
-
-    /**
-     * Method to convert population and add to total population
-     * @param totalPopulation current total
-     * @param strings string with value to add
-     * @return new total population
-     */
-    private long getTotalPopulation(long totalPopulation, List<String> strings) {
-        return totalPopulation += convertPopulation(strings.get(4));
-    }
     
     /**
      * Method to convert population from string to long
@@ -1481,21 +1349,5 @@ public class CovidData {
             population = Long.parseLong(temp);
         }
         return population;
-    }
-
-    /**
-     * Method to remove state populations from raw strings
-     * @param lists to extract information from
-     * @return map with populations
-     */
-    private HashMap<String, String> createStatePopulations(
-            List<List<String>> lists) {
-        // Declare variables
-        HashMap<String, String> hashMap = new HashMap<>();
-        // get population and state name and put in hash map
-        for (int i = 1; i < lists.size(); i++) {
-            hashMap.put(lists.get(i).get(2), lists.get(i).get(3));
-        }
-        return hashMap;
     }
 }
