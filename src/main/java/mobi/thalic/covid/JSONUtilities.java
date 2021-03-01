@@ -23,13 +23,13 @@
  */
 package mobi.thalic.covid;
 
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.json.simple.JSONArray;
@@ -62,9 +62,7 @@ public class JSONUtilities {
      */
     public List<List<String>> processJsonArray (String yesterday) {
         //declare variables
-        JSONParser jsonParser = new JSONParser();
         List<List<String>> dataList = new ArrayList<>();
-        String dataString = "";
         
         try {
             URL url = new URL(STAT_URL_JSON);
@@ -111,9 +109,7 @@ public class JSONUtilities {
      */
     public List<List<String>> processJsonArray () {
         //declare variables
-        JSONParser jsonParser = new JSONParser();
         List<List<String>> dataList = new ArrayList<>();
-        String dataString = "";
         
         try {
             URL url = new URL(STAT_URL_JSON);
@@ -212,7 +208,10 @@ public class JSONUtilities {
                     new InputStreamReader(url.openStream(), "UTF-8")); 
             
             JSONObject jsonObj = (JSONObject) obj;
-            Set<String> keys = jsonObj.keySet();
+            Set<String> keys = new HashSet<>();
+            for(Object o : jsonObj.keySet()) {
+                 keys.add((String) o);
+            }
            
             // create list of lists
             keys.stream().map(isoCode -> { 

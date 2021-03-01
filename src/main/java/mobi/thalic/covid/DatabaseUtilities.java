@@ -2164,7 +2164,6 @@ public class DatabaseUtilities {
         }
         // Declare variables
         // loop through list
-        // TODO only add data not in database
         for (int i = 1; i < lists.size(); i++) {
             if (conn != null) {
                 try (
