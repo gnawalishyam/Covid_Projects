@@ -80,7 +80,7 @@ public class StringDouble implements Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
+    public int compareTo(CountryDouble o) {
         // compare Ascending
         return Double.compare(this.value, ((StringDouble)o).getValue());
     }
