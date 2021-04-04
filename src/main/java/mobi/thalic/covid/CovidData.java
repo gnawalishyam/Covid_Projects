@@ -2043,38 +2043,6 @@ public class CovidData {
         return conn;
     }
     
-//    /**
-//     * Method to add statistiques countries to the database
-//     * @param lists to be added
-//     * @return 
-//     */
-//    public String addStatCountries(List<List<String>> lists) {
-//        // Declare variables
-//        Connection conn = null;
-//        String results = "Done";
-//        Set<String> set = new HashSet<>();
-//        lists.forEach(strings -> {
-//            set.add(strings.get(2));
-//        });
-//        try {
-//            conn = getDatabaseConnection();
-//            for(String string : set) {
-//                databaseUtilities.insertStatCountry(conn, string);
-//            }
-//        } catch (SQLException ex) {
-//            results = ex.getMessage();
-//        } finally {
-//            if (conn != null) {
-//                try {
-//                    databaseUtilities.closeConnection(conn);
-//                } catch (SQLException e) {
-//                    System.out.println(e.getMessage());
-//                }
-//            }
-//        }
-//        return results;
-//    }
-    
     /**
      * Method to add statistiques countries data to the database
      */
@@ -2082,7 +2050,7 @@ public class CovidData {
         // Declare variables
         Connection conn;
         List<List<String>> lists;
-        String country = "";
+        //String country;
         java.sql.Date maxDate = null, mDate = null;
         int countryId = 0, id;
         //lists = jsonUtilities.processJsonArray();
@@ -2165,7 +2133,6 @@ public class CovidData {
         // Declare constants
         final String WORLDOMETER_US = 
                 "https://www.worldometers.info/coronavirus/country/us/";
-        final String US_BASE_NAME = "us_covid_";
         
         // scrape WorldOMeter for United States Table
         ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
@@ -2197,7 +2164,6 @@ public class CovidData {
         // Declare constants
         final String WORLDOMETER_ALL = 
                 "https://www.worldometers.info/coronavirus/";
-        final String WORLD_BASE_NAME = "world_covid_";
         
         // Scrape world table
         ScrapeUtilities scrapeUtilities = new ScrapeUtilities();
@@ -2214,16 +2180,6 @@ public class CovidData {
             mResults.addResults( 
                     "Successfully acquired world covid data");
         }
-    }
-
-    /**
-     * Method to generate a file name
-     * @param baseName to use
-     * @return full file name
-     */
-    private String createFileName(String baseName) {
-        // put file name together and return
-        return PATH + baseName + YESTERDAY + ".csv";
     }
 
     /**
@@ -2326,10 +2282,6 @@ public class CovidData {
             List<List<String>> lists) {
         // Declare variables
         List<List<String>> newLists = new ArrayList<>();
-        // initialize counter for total population
-        long totalPopulation = 0L;
-        String temp;
-        long population;
         // loop through lists
         for (int i = 0; i < lists.size(); i++) {
             // eliminate unnecessary columns
@@ -2352,16 +2304,6 @@ public class CovidData {
         updatePopulation(conn, "UnitedStates", newLists);
         return newLists;
     }
-
-    /**
-     * Method to convert population and add to total population
-     * @param totalPopulation current total
-     * @param strings string with value to add
-     * @return new total population
-     */
-    private long getTotalPopulation(long totalPopulation, List<String> strings) {
-        return totalPopulation += convertPopulation(strings.get(4));
-    }
     
     /**
      * Method to convert population from string to long
@@ -2382,21 +2324,5 @@ public class CovidData {
             population = Long.parseLong(temp);
         }
         return population;
-    }
-
-    /**
-     * Method to remove state populations from raw strings
-     * @param lists to extract information from
-     * @return map with populations
-     */
-    private HashMap<String, String> createStatePopulations(
-            List<List<String>> lists) {
-        // Declare variables
-        HashMap<String, String> hashMap = new HashMap<>();
-        // get population and state name and put in hash map
-        for (int i = 1; i < lists.size(); i++) {
-            hashMap.put(lists.get(i).get(2), lists.get(i).get(3));
-        }
-        return hashMap;
     }
 }

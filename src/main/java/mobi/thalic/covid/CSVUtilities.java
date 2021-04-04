@@ -74,7 +74,6 @@ public class CSVUtilities {
                         int endQuote = row.indexOf('"', beginQuote + 1);
                         if (!(beginQuote < 0 || endQuote < 0)) {
                             if (beginQuote > position) {
-                                String temp = row.substring(position, beginQuote);
                                 String[] data = row.split(",");
                                 stringList.addAll(Arrays.asList(data));
                             }
