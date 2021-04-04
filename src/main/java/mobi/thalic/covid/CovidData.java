@@ -252,6 +252,7 @@ public class CovidData {
         
         // calculate totals for yesterday
         calculateTotal(conn, YESTERDAY_DATE);
+        calculateStateTotal(conn, YESTERDAY_DATE);
         // close database connection
         databaseUtilities.closeConnection(conn);
         mResults.addResults("Completed run calculations yesterday!");
@@ -271,6 +272,7 @@ public class CovidData {
             java.sql.Date sql = new java.sql.Date(parsedate.getTime());
             // calculate totals for yesterday
             calculateTotal(conn, sql);
+            calculateStateTotal(conn, sql);
         } catch(ParseException e) {
             System.out.println(e);
         }
