@@ -291,8 +291,6 @@ public class DatabaseUtilities {
         final String SELECT_ISO_CODE =
                 "SELECT iso_code FROM owid_dailies WHERE iso_code = ? AND "
                 + "`date` = ?;";
-        // Declare variables
-        String result = "";
         // test connection
         if (mConn == null) {
             mResults.addResults("selectStatePopulation no connection");
@@ -312,8 +310,6 @@ public class DatabaseUtilities {
                 ResultSet resultSet = statement.executeQuery()) {
                 // check for result(s)
                 while (resultSet.next()) {
-                    // get population from results
-                    result = resultSet.getString(1);
                     // close results
                     resultSet.close();
                     // close statement
