@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2020 Gary Larson gary@thalic.mobi.
+ * Copyright 2021 Gary Larson gary@thalic.mobi.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,31 +23,59 @@
  */
 package mobi.thalic.covid;
 
-
 /**
  *
- * @author GaryL
+ * @author Gary Larson gary@thalic.mobi
  */
-public class GetCovidData {
+public class StringInteger {
+    // Declare member variables
+    private String string;
+    private int value;
     
     /**
-     * Main entry Method
-     * @param args command line arguments
+     * Default constructor
      */
-    public static void main(String[] args)  {
-        Results results = new Results();
-
-        CovidData covidData = new CovidData(results);   
-        //covidData.createStateDailies();
-        //String result = covidData.createCountryDailies();
-        //covidData.processWorldometerScrape();
-        covidData.createCalculations();
-        //covidData.createCSVFile();
-        //covidData.getStatData();
-        //covidData.runCalculations("2020-12-28");
-        //covidData.runCalculationsYesterday();
-        //JSONUtilities.processJsonArray();
-        //covidData.getOwidData();
-        System.out.println(results.getResults());
+    public StringInteger () {};
+    
+    /**
+     * Constructor for all variables
+     * @param string to set
+     * @param value to set
+     */
+    public StringInteger (String string, int value) {
+        this.string = string;
+        this.value = value;
+    }
+    
+    /**
+     * Getter for string
+     * @return string
+     */
+    public String getString() {
+        return string;
+    }
+    
+    /**
+     * Setter for string
+     * @param string to set
+     */
+    public void setString(String string) {
+        this.string = string;
+    }
+    
+    /**
+     * Getter for value
+     * @return value
+     */
+    public int getValue() {
+        return value;
+    }
+    
+    /**
+     * Setter for value
+     * @param value to set
+     */
+    public void setValue(int value) {
+        this.value = value;
     }
 }

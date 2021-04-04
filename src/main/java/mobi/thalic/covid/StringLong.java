@@ -27,40 +27,40 @@ package mobi.thalic.covid;
  *
  * @author Gary Larson gary@thalic.mobi
  */
-public class CountryLong {
+public class StringLong {
     // Declare member variables
-    private String country;
+    private String string;
     private long value;
     
     /**
      * Default constructor
      */
-    public CountryLong () {};
+    public StringLong () {};
     
     /**
      * Constructor for all variables
-     * @param country to set
+     * @param string to set
      * @param value to set
      */
-    public CountryLong (String country, long value) {
-        this.country = country;
+    public StringLong (String string, long value) {
+        this.string = string;
         this.value = value;
     }
     
     /**
-     * Getter for country
-     * @return country
+     * Getter for string
+     * @return string
      */
-    public String getCountry() {
-        return country;
+    public String getString() {
+        return string;
     }
     
     /**
-     * Setter for country
-     * @param country to set
+     * Setter for string
+     * @param string to set
      */
-    public void setCountry(String country) {
-        this.country = country;
+    public void setString(String string) {
+        this.string = string;
     }
     
     /**

@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2020 Gary Larson gary@thalic.mobi.
+ * Copyright 2021 Gary Larson gary@thalic.mobi.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,31 +23,59 @@
  */
 package mobi.thalic.covid;
 
-
 /**
  *
- * @author GaryL
+ * @author Gary Larson gary@thalic.mobi
  */
-public class GetCovidData {
+public class DoubleInteger {
+    // Declare member variables
+    private double doubleValue;
+    private int intValue;
     
     /**
-     * Main entry Method
-     * @param args command line arguments
+     * Default constructor
      */
-    public static void main(String[] args)  {
-        Results results = new Results();
-
-        CovidData covidData = new CovidData(results);   
-        //covidData.createStateDailies();
-        //String result = covidData.createCountryDailies();
-        //covidData.processWorldometerScrape();
-        covidData.createCalculations();
-        //covidData.createCSVFile();
-        //covidData.getStatData();
-        //covidData.runCalculations("2020-12-28");
-        //covidData.runCalculationsYesterday();
-        //JSONUtilities.processJsonArray();
-        //covidData.getOwidData();
-        System.out.println(results.getResults());
+    public DoubleInteger () {};
+    
+    /**
+     * Constructor for all variables
+     * @param doubleValue to set
+     * @param intValue to set
+     */
+    public DoubleInteger (double doubleValue, int intValue) {
+        this.doubleValue = doubleValue;
+        this.intValue = intValue;
+    }
+    
+    /**
+     * Getter for double value
+     * @return double value
+     */
+    public double getDoubleValue() {
+        return doubleValue;
+    }
+    
+    /**
+     * Setter for double value
+     * @param doubleValue to set
+     */
+    public void setString(double doubleValue) {
+        this.doubleValue = doubleValue;
+    }
+    
+    /**
+     * Getter for int value
+     * @return int value
+     */
+    public int getIntValue() {
+        return intValue;
+    }
+    
+    /**
+     * Setter for int value
+     * @param intValue to set
+     */
+    public void setIntValue(int intValue) {
+        this.intValue = intValue;
     }
 }

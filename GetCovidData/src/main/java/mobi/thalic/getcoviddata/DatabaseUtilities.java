@@ -1385,6 +1385,53 @@ public class DatabaseUtilities {
     }
     
     /**
+     * Method to get new case data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return case data
+     */
+    public Map<String, Long> getNewCasesData(Connection conn, java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES_COUNTRY_DAILIES_SQL =
+                "SELECT display, cases "
+                        + "FROM country_dailies INNER JOIN country_codes "
+                        + "ON country_dailies.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
+                        + "ORDER BY cases;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getNewCaseData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> cases = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_CASES_COUNTRY_DAILIES_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        cases.put(resultSet.getString("display"),
+                                resultSet.getLong("cases"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getNewCasesData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases;
+    }
+    
+    /**
      * Method to get death data from the database
      * @param conn to the database
      * @param date of the data
@@ -1425,6 +1472,54 @@ public class DatabaseUtilities {
                 }
             } catch (SQLException e) {
                 mResults.addResults("getCasesData " + date.toString() + " " + 
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths;
+    }
+    
+    /**
+     * Method to get death data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return death data
+     */
+    public Map<String, Long> getNewDeathsData(Connection conn,
+                                           java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS_COUNTRY_DAILIES_SQL =
+                "SELECT display, deaths "
+                        + "FROM country_dailies INNER JOIN country_codes "
+                        + "ON country_dailies.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
+                        + "ORDER BY deaths;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getNewDeathsData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> deaths = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS_COUNTRY_DAILIES_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        deaths.put(resultSet.getString("display"),
+                                resultSet.getLong("deaths"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getNewDeathsData " + date.toString() + " " +
                         e.getMessage());
                 return null;
             }
@@ -1481,6 +1576,56 @@ public class DatabaseUtilities {
     }
     
     /**
+     * Method to get active100k data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return active100k data
+     */
+    public List<StringDouble> getActive100kData(Connection conn,
+                java.sql.Date date) {
+        // Declare constant
+        final String SELECT_ACTIVE100K_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((active / population) * 100000, 5, false) AS active100k "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (active / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getActive100kData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> active100k = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_ACTIVE100K_COUNTRY_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("active100k")));
+                        active100k.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getActive100kData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return active100k;
+    }
+    
+    /**
      * Method to get recovered data from the database
      * @param conn to the database
      * @param date of the data
@@ -1527,56 +1672,6 @@ public class DatabaseUtilities {
         }
         return recovered;
     }
-   
-    /**
-     * Method to get cases10k data from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return cases10k data
-     */
-    public List<CountryDouble> getCases10kData(Connection conn, 
-            java.sql.Date date) {
-        // Declare constant
-        final String SELECT_CASES10K_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT((cases / population) * 10000, 2, false) AS cases10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (cases / population) * 10000;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getCases10kData no connection");
-            connect();
-        }
-        // declare variable
-        List<CountryDouble> cases10k = new ArrayList<>();
-        if (conn != null) {
-            try (
-                // statement to use to get stat country id
-                PreparedStatement statement =
-                    conn.prepareStatement(SELECT_CASES10K_COUNTRY_TOTALS_SQL)) {
-                // add date parameter
-                statement.setDate(1, date);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        CountryDouble countryDouble = new CountryDouble(
-                                resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("cases10k")));
-                        cases10k.add(countryDouble);
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getCases10kData " + date.toString() + " " +
-                        e.getMessage());
-                return null;
-            }
-        }
-        return cases10k;
-    }
     
     /**
      * Method to get recovered data from the database
@@ -1584,12 +1679,12 @@ public class DatabaseUtilities {
      * @param date of the data
      * @return recovered data
      */
-    public List<CountryDouble> getRecoveredPercentData(Connection conn,
+    public List<StringDouble> getRecoveredPercentData(Connection conn,
                                               java.sql.Date date) {
         // Declare constant
         final String SELECT_RECOVERED_PERCENT_COUNTRY_TOTALS_SQL =
                 "SELECT display, FORMAT(((cases - `active` - deaths) / cases) "
-                        + "* 100, 2, false) AS recoveredPercent "
+                        + "* 100, 5, false) AS recoveredPercent "
                         + "FROM country_totals INNER JOIN country_codes "
                         + "ON country_totals.country_id = country_codes.id "
                         + "WHERE `date` = ? "
@@ -1602,7 +1697,7 @@ public class DatabaseUtilities {
             connect();
         }
         // declare variable
-        List<CountryDouble> recoveredPercent = new ArrayList<>();
+        List<StringDouble> recoveredPercent = new ArrayList<>();
         if (conn != null) {
             try (
                     // statement to use to get stat country id
@@ -1616,7 +1711,7 @@ public class DatabaseUtilities {
                         ResultSet resultSet = statement.executeQuery()) {
                     // check if results
                     while (resultSet.next()) {
-                        recoveredPercent.add(new CountryDouble(
+                        recoveredPercent.add(new StringDouble(
                             resultSet.getString("display"),
                             cleanDouble(resultSet
                                     .getString("recoveredPercent"))));
@@ -1632,58 +1727,6 @@ public class DatabaseUtilities {
     }
     
     /**
-     * Method to get new cases10k data from 16 days prior from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return cases10k data
-     */
-    public List<CountryDouble> getCases10kData16(Connection conn, 
-            java.sql.Date date) {
-        // Declare constant
-        final String SELECT_CASES10K16_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT((cases / population) * 10000, 2, false) AS cases10k16 "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (cases / population) * 10000;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getCases10kData16 no connection");
-            connect();
-        }
-        // declare variable
-        List<CountryDouble> cases10k16 = new ArrayList<>();
-        if (conn != null) {
-            try (
-                // statement to use to get stat country id
-                PreparedStatement statement =
-                    conn.prepareStatement(SELECT_CASES10K16_COUNTRY_TOTALS_SQL)) {
-                // add date - 16 days parameter
-                LocalDate pastDate = date.toLocalDate().minusDays(16);
-                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
-                statement.setDate(1, date1);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        CountryDouble countryDouble = new CountryDouble(
-                                resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("cases10k16")));
-                        cases10k16.add(countryDouble);
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getCases10kData " + date.toString() + " " +
-                        e.getMessage());
-                return null;
-            }
-        }
-        return cases10k16;
-    }
-    
-    /**
      * Method to remove commas from string
      * @param string to clean
      * @return number in double format
@@ -1693,211 +1736,7 @@ public class DatabaseUtilities {
         double tempDouble = Double.parseDouble(string);
         return tempDouble;
     }
-    
-    /**
-     * Method to get deaths10k data from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return deaths10k data
-     */
-    public List<CountryDouble> getDeaths10kData(Connection conn,
-                                                                         java.sql.Date date) {
-        // Declare constant
-        final String SELECT_DEATHS10K_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT((deaths / population) * 10000, 2, false) AS deaths10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (deaths / population) * 10000;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getDeaths10kData no connection");
-            connect();
-        }
-        // declare variable
-        List<CountryDouble> deaths10k = new ArrayList<>();
-        if (conn != null) {
-            try (
-                    // statement to use to get stat country id
-                    PreparedStatement statement =
-                            conn.prepareStatement(SELECT_DEATHS10K_COUNTRY_TOTALS_SQL)) {
-                // add date parameter
-                statement.setDate(1, date);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        CountryDouble countryDouble = new CountryDouble(
-                                resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("deaths10k")));
-                        deaths10k.add(countryDouble);
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getDeaths10kData " + date.toString() + " " +
-                        e.getMessage());
-                return null;
-            }
-        }
-        return deaths10k;
-    }
-    
-    /**
-     * Method to get new deaths10k data from 16 days prior from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return deaths10k data
-     */
-    public List<CountryDouble> getDeaths10kData16(Connection conn,
-                    java.sql.Date date) {
-        // Declare constant
-        final String SELECT_DEATHS10K16_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT((deaths / population) * 10000, 2, false) AS deaths10k16 "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (deaths / population) * 10000;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getDeaths10kData16 no connection");
-            connect();
-        }
-        // declare variable
-        List<CountryDouble> deaths10k16 = new ArrayList<>();
-        if (conn != null) {
-            try (
-                    // statement to use to get stat country id
-                    PreparedStatement statement =
-                            conn.prepareStatement(SELECT_DEATHS10K16_COUNTRY_TOTALS_SQL)) {
-                // add date - 16 days parameter
-                LocalDate pastDate = date.toLocalDate().minusDays(16);
-                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
-                statement.setDate(1, date1);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        CountryDouble countryDouble = new CountryDouble(
-                                resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("deaths10k16")));
-                        deaths10k16.add(countryDouble);
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getDeaths10kData16 " + date.toString() + " " +
-                        e.getMessage());
-                return null;
-            }
-        }
-        return deaths10k16;
-    }
-    
-    /**
-     * Method to get active10k data from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return active10k data
-     */
-    public List<CountryDouble> getActive10kData(Connection conn,
-                java.sql.Date date) {
-        // Declare constant
-        final String SELECT_ACTIVE10K_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT((active / population) * 10000, 2, false) AS active10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY (active / population) * 10000;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getActive10kData no connection");
-            connect();
-        }
-        // declare variable
-        List<CountryDouble> active10k = new ArrayList<>();
-        if (conn != null) {
-            try (
-                    // statement to use to get stat country id
-                    PreparedStatement statement =
-                            conn.prepareStatement(SELECT_ACTIVE10K_COUNTRY_TOTALS_SQL)) {
-                // add date parameter
-                statement.setDate(1, date);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        CountryDouble countryDouble = new CountryDouble(
-                                resultSet.getString("display"),
-                                cleanDouble(resultSet.getString("active10k")));
-                        active10k.add(countryDouble);
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getActive10kData " + date.toString() + " " +
-                        e.getMessage());
-                return null;
-            }
-        }
-        return active10k;
-    }
-    
-    /**
-     * Method to get recovered10k data from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return recovered10k data
-     */
-    public List<CountryDouble> getRecovered10kData(Connection conn,
-                java.sql.Date date) {
-        // Declare constant
-        final String SELECT_RECOVERED10K_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT(((cases - deaths - `active`) / "
-                        + "population) * 10000, 2, false) AS recovered10k "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W') "
-                        + "ORDER BY ((cases - deaths - `active`) / population) * 10000 "
-                        + "DESC;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getRecovered10kData no connection");
-            connect();
-        }
-        // declare variable
-        List<CountryDouble> recovered10k = new ArrayList<>();
-        if (conn != null) {
-            try (
-                    // statement to use to get stat country id
-                    PreparedStatement statement =
-                            conn.prepareStatement(SELECT_RECOVERED10K_COUNTRY_TOTALS_SQL)) {
-                // add date parameter
-                statement.setDate(1, date);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        CountryDouble countryDouble = new CountryDouble(
-                            resultSet.getString("display"),
-                            cleanDouble(resultSet.getString("recovered10k")));
-                        recovered10k.add(countryDouble);
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getRecovered10kData " + date.toString() + " " +
-                        e.getMessage());
-                return null;
-            }
-        }
-        return recovered10k;
-    }
-    
+  
     /**
      * Method to get mortality data from the database
      * @param conn to the database
@@ -1909,11 +1748,11 @@ public class DatabaseUtilities {
         // Declare constant
         final String SELECT_MORTALITY_COUNTRY_TOTALS_SQL =
                 "SELECT display, FORMAT((deaths / (deaths + "
-                        + "(cases - `active` - deaths))) * 100, 2, false) AS mortality "
+                        + "(cases - `active` - deaths))) * 100, 5, false) AS mortality "
                         + "FROM country_totals INNER JOIN country_codes "
                         + "ON country_totals.country_id = country_codes.id "
                         + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
                         + "ORDER BY (deaths / (deaths + (cases - `active` - deaths))) * "
                         + "100;";
         // test connection
@@ -1954,28 +1793,28 @@ public class DatabaseUtilities {
      * @param date of the data
      * @return population data
      */
-    public List<CountryLong> getPopulationData(Connection conn, 
-            java.sql.Date date) {
+    public List<StringLong> getPopulationData(Connection conn,
+                java.sql.Date date) {
         // Declare constant
-        final String SELECT_POPULATION_COUNTRY_TOTALS_SQL = 
+        final String SELECT_POPULATION_COUNTRY_TOTALS_SQL =
                 "SELECT display, population "
-                + "FROM country_totals INNER JOIN country_codes "
-                + "ON country_totals.country_id = country_codes.id "
-                + "WHERE `date` = ? "
-                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                + "ORDER BY population DESC;";
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
+                        + "ORDER BY population DESC;";
         // test connection
         if (conn == null) {
             mResults.addResults("getPopulationData no connection");
             connect();
         }
         // declare variable
-        List<CountryLong> population = new ArrayList<>();
+        List<StringLong> population = new ArrayList<>();
         if (conn != null) {
             try (
-                    // statement to use to get stat country id
-                    PreparedStatement statement =
-                            conn.prepareStatement(SELECT_POPULATION_COUNTRY_TOTALS_SQL)) {
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_POPULATION_COUNTRY_TOTALS_SQL)) {
                 // add date parameter
                 statement.setDate(1, date);
                 try (
@@ -1983,7 +1822,7 @@ public class DatabaseUtilities {
                         ResultSet resultSet = statement.executeQuery()) {
                     // check if results
                     while (resultSet.next()) {
-                        CountryLong countryLong = new CountryLong(
+                        StringLong countryLong = new StringLong(
                                 resultSet.getString("display"),
                                 resultSet.getLong("population"));
                         population.add(countryLong);
@@ -1999,29 +1838,86 @@ public class DatabaseUtilities {
     }
     
     /**
+     * Method to get population data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return population data
+     */
+    public List<StringLong> getStatePopulationData(Connection conn,
+                java.sql.Date date) {
+        // Declare constant
+        final String SELECT_POPULATION_STATE_TOTALS_SQL =
+                "SELECT state, population "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY population DESC;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStatePopulationData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringLong> population = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_POPULATION_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringLong countryLong = new StringLong(
+                                resultSet.getString("state"),
+                                resultSet.getLong("population"));
+                        population.add(countryLong);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStatePopulationData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return population;
+    }
+    
+    /**
      * Method to insert calculation data to the database
      * @param conn connection to the database
      * @param calc calculation data
      */
     public void insertCalculation(Connection conn, Calculations calc) {
         final String INSERT_CALCULATIONS_SQL = "INSERT INTO "
-                + "country_calculations (country, `date`, pc_population, "
-                + "pc_mortality, pc_deaths, pc_active_cases, pc_recovered, "
-                + "pc_total_cases, population, population_rank, deaths10k, "
-                + "deaths10k_rank, deaths10k_score, active10k, active10k_rank, "
-                + "active10k_score, recovered10k, recovered10k_rank, "
-                + "recovered10k_score, cases10k, cases10k_rank, cases10k_score, "
-                + "`rank`, score, survival_rate, active_percent, "
-                + "recovered_percent, recovered_percent_rank, "
-                + "recovered_percent_score, cases10k_15_days, "
-                + "cases10k_15_days_rank, cases10k_15_days_score, "
-                + "deaths10k_15_days, deaths10k_15_days_rank, "
-                + "deaths10k_15_days_score) "
+                + "country_json (country, `date`, population, population_world_rank, "
+                + "pc_of_world_population, mortality_rate, pc_of_world_deaths, "
+                + "pc_of_world_active_cases, pc_of_world_recovered, "
+                + "pc_of_world_total_cases, total_cases, new_cases, total_deaths, "
+                + "new_deaths, total_active_cases, total_deaths100k, "
+                + "total_deaths100k_rank, total_deaths100k_score, "
+                + "total_deaths100k_grade, total_active100k, total_active100k_rank, "
+                + "total_active100k_score, total_active100k_grade, "
+                + "total_cases100k, total_cases100k_rank, total_cases100k_score, "
+                + "total_cases100k_grade, new_cases100k_15days, "
+                + "new_cases100k_15days_rank, new_cases100k_15days_score, "
+                + "new_cases100k_15days_grade, new_deaths100k_15days, "
+                + "new_deaths100k_15days_rank, new_deaths100k_15days_score,"
+                + "new_deaths100k_15days_grade, new_cases100k_30days, "
+                + "new_cases100k_30days_rank, new_cases100k_30days_score, "
+                + "new_cases100k_30days_grade, new_deaths100k_30days, "
+                + "new_deaths100k_30days_rank, new_deaths100k_30days_score, "
+                + "new_deaths100k_30days_grade, overall_rank, overall_score, "
+                + "overall_grade) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-                + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                + "?, ?, ?, ?, ?, ?, ?, ?, ?);";
         // test connection
         if (conn == null) {
-            mResults.addResults("getRecoveredData no connection");
+            mResults.addResults("insertCalculations no connection");
             connect();
         }
         if (conn != null) {
@@ -2033,68 +1929,94 @@ public class DatabaseUtilities {
                 statement.setString(1, calc.getCountry());
                 // add date parameter
                 statement.setDate(2, calc.getDate());
-                // add percent of population parameter
-                statement.setDouble(3, calc.getPercentPopulation());
-                // add percent of mortality parameter
-                statement.setDouble(4, calc.getPercentMortality());
-                // add percent of deaths parameter
-                statement.setDouble(5, calc.getPercentDeaths());
-                // add percent of active cases parameter
-                statement.setDouble(6, calc.getPercentActive());
-                // add percent of recovered cases parameter
-                statement.setDouble(7, calc.getPercentRecovered());
-                // add percent of total cases parameter
-                statement.setDouble(8, calc.getPercentCases());
                 // add population parameter
-                statement.setLong(9, calc.getPopulation());
+                statement.setLong(3, calc.getPopulation());
                 // add population rank parameter
-                statement.setInt(10, calc.getPopulationRank());
-                // add deaths10k parameter
-                statement.setDouble(11, calc.getDeaths10k());
-                // add deaths10k rank parameter
-                statement.setInt(12, calc.getDeaths10kRank());
-                // add deaths10k score parameter
-                statement.setString(13, calc.getDeaths10kScore());
-                // add active10k parameter
-                statement.setDouble(14, calc.getActive10k());
-                // add active10k rank parameter
-                statement.setInt(15, calc.getActive10kRank());
-                // add active10k score parameter
-                statement.setString(16, calc.getActive10kScore());
-                // add recovered10k parameter
-                statement.setDouble(17, calc.getRecovered10k());
-                // add recovered10k rank parameter
-                statement.setInt(18, calc.getRecovered10kRank());
-                // add recovered10k score parameter
-                statement.setString(19, calc.getRecovered10kScore());
-                // add cases10k parameter
-                statement.setDouble(20, calc.getCases10k());
-                // add cases10k rank parameter
-                statement.setInt(21, calc.getCases10kRank());
-                // add cases10k score parameter
-                statement.setString(22, calc.getCases10kScore());
+                statement.setInt(4, calc.getPopulationRank());
+                // add percent of population parameter
+                statement.setDouble(5, calc.getPercentPopulation());
+                // add percent of mortality parameter
+                statement.setDouble(6, calc.getMortalityRate());
+                // add percent of deaths parameter
+                statement.setDouble(7, calc.getPercentDeaths());
+                // add percent of active cases parameter
+                statement.setDouble(8, calc.getPercentActive());
+                // add percent of recovered cases parameter
+                statement.setDouble(9, calc.getPercentRecovered());
+                // add percent of total cases parameter
+                statement.setDouble(10, calc.getPercentCases());
+                // add total cases parameter
+                statement.setLong(11, calc.getTotalCases());
+                // add new cases parameter
+                statement.setLong(12, calc.getNewCases());
+                // add total deaths parameter
+                statement.setLong(13, calc.getTotalDeaths());
+                // add new deaths parameter
+                statement.setLong(14, calc.getNewDeaths());
+                // add total active cases parameter
+                statement.setLong(15, calc.getTotalActiveCases());
+                // add deaths100k parameter
+                statement.setDouble(16, calc.getDeaths100k());
+                // add deaths100k rank parameter
+                statement.setInt(17, calc.getDeaths100kRank());
+                // add deaths100k score parameter
+                statement.setInt(18, calc.getDeaths100kScore());
+                // add deaths100k grade parameter
+                statement.setString(19, calc.getDeaths100kGrade());
+                // add active100k parameter
+                statement.setDouble(20, calc.getActive100k());
+                // add active100k rank parameter
+                statement.setInt(21, calc.getActive100kRank());
+                // add active100k score parameter
+                statement.setInt(22, calc.getActive100kScore());
+                // add active100k grade parameter
+                statement.setString(23, calc.getActive100kGrade());
+                // add cases100k parameter
+                statement.setDouble(24, calc.getCases100k());
+                // add cases100k rank parameter
+                statement.setInt(25, calc.getCases100kRank());
+                // add cases100k score parameter
+                statement.setInt(26, calc.getCases100kScore());
+                // add cases100k grade parameter
+                statement.setString(27, calc.getCases100kGrade());
+                // add deaths100k 15 days parameter
+                statement.setDouble(28, calc.getDeaths100k15());
+                // add deaths100k 15 days rank parameter
+                statement.setInt(29, calc.getDeaths100k15Rank());
+                // add deaths100k 15 days score parameter
+                statement.setInt(30, calc.getDeaths100k15Score());
+                // add deaths100k 15 days grade parameter
+                statement.setString(31, calc.getDeaths100k15Grade());
+                // add cases100k 15 days parameter
+                statement.setDouble(32, calc.getCases100k15());
+                // add cases100k 15 days rank parameter
+                statement.setInt(33, calc.getCases100k15Rank());
+                // add cases100k 15 days score parameter
+                statement.setInt(34, calc.getCases100k15Score());
+                // add cases100k 15 days grade parameter
+                statement.setString(35, calc.getCases100k15Grade());
+                // add deaths100k 30 days parameter
+                statement.setDouble(36, calc.getDeaths100k30());
+                // add deaths100k 30 days rank parameter
+                statement.setInt(37, calc.getDeaths100k30Rank());
+                // add deaths100k 30 days score parameter
+                statement.setInt(38, calc.getDeaths100k30Score());
+                // add deaths100k 30 days grade parameter
+                statement.setString(39, calc.getDeaths100k30Grade());
+                // add cases100k 30 days parameter
+                statement.setDouble(40, calc.getCases100k30());
+                // add cases100k 30 days rank parameter
+                statement.setInt(41, calc.getCases100k30Rank());
+                // add cases100k 30 days score parameter
+                statement.setInt(42, calc.getCases100k30Score());
+                // add cases100k 30 days grade parameter
+                statement.setString(43, calc.getCases100k30Grade());
                 // add overall rank parameter
-                statement.setInt(23, calc.getRank());
+                statement.setInt(44, calc.getRank());
                 // add overall score parameter
-                statement.setString(24, calc.getScore());
-                // add survival rate parameter
-                statement.setDouble(25, calc.getSurvivalRate());
-                // add active percent parameter
-                statement.setDouble(26, calc.getActivePercent());
-                // add recovered percent parameter
-                statement.setDouble(27, calc.getRecoveredPercent());
-                // add recovered percent rank
-                statement.setInt(28, calc.getRecoveredPercentRank());
-                // add recovered percent score
-                statement.setString(29, calc.getRecoveredPercentScore());
-                // add cases10k 15 days average data
-                statement.setDouble(30, calc.getCases10k15());
-                statement.setInt(31, calc.getCases10k15Rank());
-                statement.setString(32, calc.getCases10k15Score());
-                // add deaths10k 15 days average data
-                statement.setDouble(33, calc.getDeaths10k15());
-                statement.setInt(34, calc.getDeaths10k15Rank());
-                statement.setString(35, calc.getDeaths10k15Score());
+                statement.setInt(45, calc.getScore());
+                // add overall grade parameter
+                statement.setString(46, calc.getGrade());
                 // run statement
                 statement.execute();
             } catch (SQLException e) {
@@ -2102,5 +2024,1084 @@ public class DatabaseUtilities {
                         " " + calc.getDate().toString() + " " + e.getMessage());
             }
         }
+    }
+    
+    /**
+     * Method to insert calculation data to the database
+     * @param conn connection to the database
+     * @param calc calculation data
+     */
+    public void insertStateCalculation(Connection conn, Calculations calc) {
+        final String INSERT_CALCULATIONS_SQL = "INSERT INTO "
+                + "state_json (state, `date`, population, population_usa_rank, "
+                + "pc_of_usa_population, mortality_rate, pc_of_usa_deaths, "
+                + "pc_of_usa_active_cases, pc_of_usa_recovered, "
+                + "pc_of_usa_total_cases, total_cases, new_cases, total_deaths, "
+                + "new_deaths, total_active_cases, total_deaths100k, "
+                + "total_deaths100k_rank, total_deaths100k_score, "
+                + "total_deaths100k_grade, total_active100k, total_active100k_rank, "
+                + "total_active100k_score, total_active100k_grade, "
+                + "total_cases100k, total_cases100k_rank, total_cases100k_score, "
+                + "total_cases100k_grade, new_cases100k_15days, "
+                + "new_cases100k_15days_rank, new_cases100k_15days_score, "
+                + "new_cases100k_15days_grade, new_deaths100k_15days, "
+                + "new_deaths100k_15days_rank, new_deaths100k_15days_score,"
+                + "new_deaths100k_15days_grade, new_cases100k_30days, "
+                + "new_cases100k_30days_rank, new_cases100k_30days_score, "
+                + "new_cases100k_30days_grade, new_deaths100k_30days, "
+                + "new_deaths100k_30days_rank, new_deaths100k_30days_score, "
+                + "new_deaths100k_30days_grade, overall_rank, overall_score, "
+                + "overall_grade) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                + "?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("insertStateCalculations no connection");
+            connect();
+        }
+        if (conn != null) {
+            try (
+                    // statement to use
+                    PreparedStatement statement =
+                            conn.prepareStatement(INSERT_CALCULATIONS_SQL)) {
+                // add state parameter
+                statement.setString(1, calc.getCountry());
+                // add date parameter
+                statement.setDate(2, calc.getDate());
+                // add population parameter
+                statement.setLong(3, calc.getPopulation());
+                // add population rank parameter
+                statement.setInt(4, calc.getPopulationRank());
+                // add percent of population parameter
+                statement.setDouble(5, calc.getPercentPopulation());
+                // add percent of mortality parameter
+                statement.setDouble(6, calc.getMortalityRate());
+                // add percent of deaths parameter
+                statement.setDouble(7, calc.getPercentDeaths());
+                // add percent of active cases parameter
+                statement.setDouble(8, calc.getPercentActive());
+                // add percent of recovered cases parameter
+                statement.setDouble(9, calc.getPercentRecovered());
+                // add percent of total cases parameter
+                statement.setDouble(10, calc.getPercentCases());
+                // add total cases parameter
+                statement.setLong(11, calc.getTotalCases());
+                // add new cases parameter
+                statement.setLong(12, calc.getNewCases());
+                // add total deaths parameter
+                statement.setLong(13, calc.getTotalDeaths());
+                // add new deaths parameter
+                statement.setLong(14, calc.getNewDeaths());
+                // add total active cases parameter
+                statement.setLong(15, calc.getTotalActiveCases());
+                // add deaths100k parameter
+                statement.setDouble(16, calc.getDeaths100k());
+                // add deaths100k rank parameter
+                statement.setInt(17, calc.getDeaths100kRank());
+                // add deaths100k score parameter
+                statement.setInt(18, calc.getDeaths100kScore());
+                // add deaths100k grade parameter
+                statement.setString(19, calc.getDeaths100kGrade());
+                // add active100k parameter
+                statement.setDouble(20, calc.getActive100k());
+                // add active100k rank parameter
+                statement.setInt(21, calc.getActive100kRank());
+                // add active100k score parameter
+                statement.setInt(22, calc.getActive100kScore());
+                // add active100k grade parameter
+                statement.setString(23, calc.getActive100kGrade());
+                // add cases100k parameter
+                statement.setDouble(24, calc.getCases100k());
+                // add cases100k rank parameter
+                statement.setInt(25, calc.getCases100kRank());
+                // add cases100k score parameter
+                statement.setInt(26, calc.getCases100kScore());
+                // add cases100k grade parameter
+                statement.setString(27, calc.getCases100kGrade());
+                // add deaths100k 15 days parameter
+                statement.setDouble(28, calc.getDeaths100k15());
+                // add deaths100k 15 days rank parameter
+                statement.setInt(29, calc.getDeaths100k15Rank());
+                // add deaths100k 15 days score parameter
+                statement.setInt(30, calc.getDeaths100k15Score());
+                // add deaths100k 15 days grade parameter
+                statement.setString(31, calc.getDeaths100k15Grade());
+                // add cases100k 15 days parameter
+                statement.setDouble(32, calc.getCases100k15());
+                // add cases100k 15 days rank parameter
+                statement.setInt(33, calc.getCases100k15Rank());
+                // add cases100k 15 days score parameter
+                statement.setInt(34, calc.getCases100k15Score());
+                // add cases100k 15 days grade parameter
+                statement.setString(35, calc.getCases100k15Grade());
+                // add deaths100k 30 days parameter
+                statement.setDouble(36, calc.getDeaths100k30());
+                // add deaths100k 30 days rank parameter
+                statement.setInt(37, calc.getDeaths100k30Rank());
+                // add deaths100k 30 days score parameter
+                statement.setInt(38, calc.getDeaths100k30Score());
+                // add deaths100k 30 days grade parameter
+                statement.setString(39, calc.getDeaths100k30Grade());
+                // add cases100k 30 days parameter
+                statement.setDouble(40, calc.getCases100k30());
+                // add cases100k 30 days rank parameter
+                statement.setInt(41, calc.getCases100k30Rank());
+                // add cases100k 30 days score parameter
+                statement.setInt(42, calc.getCases100k30Score());
+                // add cases100k 30 days grade parameter
+                statement.setString(43, calc.getCases100k30Grade());
+                // add overall rank parameter
+                statement.setInt(44, calc.getRank());
+                // add overall score parameter
+                statement.setInt(45, calc.getScore());
+                // add overall grade parameter
+                statement.setString(46, calc.getGrade());
+                // run statement
+                statement.execute();
+            } catch (SQLException e) {
+                mResults.addResults("insertStateCalculations " + calc.getCountry() + 
+                        " " + calc.getDate().toString() + " " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Method to get active data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return active data
+     */
+    public Map<String, Long> getStateActiveData(Connection conn,
+                                           java.sql.Date date) {
+        // Declare constant
+        final String SELECT_ACTIVE_STATE_TOTALS_SQL =
+                "SELECT state, active "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY active;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateActiveData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> active = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_ACTIVE_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        active.put(resultSet.getString("state"),
+                                resultSet.getLong("active"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateActiveData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return active;
+    }
+    
+    /**
+     * Method to get active100k data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return active100k data
+     */
+    public List<StringDouble> getStateActive100kData(Connection conn,
+                java.sql.Date date) {
+        // Declare constant
+        final String SELECT_ACTIVE100K_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((active / population) * 100000, 5, false) AS active100k "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (active / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateActive100kData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> active100k = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_ACTIVE100K_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("active100k")));
+                        active100k.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateActive100kData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return active100k;
+    }
+    
+    /**
+     * Method to get cases100k data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return cases100k data
+     */
+    public List<StringDouble> getCases100kData(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES100K_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((cases / population) * 100000, 5, false) AS cases100k "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (cases / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getCases100kData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> cases100k = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_CASES100K_COUNTRY_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("cases100k")));
+                        cases100k.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getCases100kData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases100k;
+    }
+    
+    /**
+     * Method to get case data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return case data
+     */
+    public Map<String, Long> getStateCasesData(Connection conn, java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES_STATE_TOTALS_SQL =
+                "SELECT state, cases "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY cases;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateCaseData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> cases = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_CASES_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        cases.put(resultSet.getString("state"),
+                                resultSet.getLong("cases"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateCasesData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases;
+    }
+    
+    /**
+     * Method to get new case data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return case data
+     */
+    public Map<String, Long> getNewStateCasesData(Connection conn, java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES_STATE_DAILIES_SQL =
+                "SELECT state, cases "
+                        + "FROM state_dailies INNER JOIN states "
+                        + "ON state_dailies.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY cases;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getNewStateCaseData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> cases = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_CASES_STATE_DAILIES_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        cases.put(resultSet.getString("state"),
+                                resultSet.getLong("cases"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getNewStateCasesData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases;
+    }
+    
+    /**
+     * Method to get cases100k data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return cases100k data
+     */
+    public List<StringDouble> getStateCases100kData(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES100K_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((cases / population) * 100000, 5, false) AS cases100k "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (cases / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateCases100kData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> cases100k = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_CASES100K_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("cases100k")));
+                        cases100k.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateCases100kData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases100k;
+    }
+    
+    /**
+     * Method to get new cases100k data from 16 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return cases100k data
+     */
+    public List<StringDouble> getCases100kData16(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES100K16_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((cases / population) * 100000, 5, false) AS cases100k16 "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (cases / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getCases100kData16 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> cases100k16 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_CASES100K16_COUNTRY_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(16);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("cases100k16")));
+                        cases100k16.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getCases100kData16 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases100k16;
+    }
+    
+    /**
+     * Method to get new cases100k data from 16 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return cases100k data
+     */
+    public List<StringDouble> getStateCases100kData16(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES100K16_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((cases / population) * 100000, 5, false) AS cases100k16 "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (cases / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateCases100kData16 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> cases100k16 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_CASES100K16_STATE_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(16);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("cases100k16")));
+                        cases100k16.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateCases100kData16 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases100k16;
+    }
+    
+    /**
+     * Method to get new cases100k data from 31 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return cases100k data
+     */
+    public List<StringDouble> getCases100kData31(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES100K31_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((cases / population) * 100000, 5, false) AS cases100k31 "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (cases / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getCases100kData31 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> cases100k31 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_CASES100K31_COUNTRY_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(31);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("cases100k31")));
+                        cases100k31.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getCases100kData31 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases100k31;
+    }
+    
+    /**
+     * Method to get new cases100k data from 31 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return cases100k data
+     */
+    public List<StringDouble> getStateCases100kData31(Connection conn, 
+            java.sql.Date date) {
+        // Declare constant
+        final String SELECT_CASES100K31_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((cases / population) * 100000, 5, false) AS cases100k31 "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (cases / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateCases100kData31 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> cases100k31 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                // statement to use to get stat country id
+                PreparedStatement statement =
+                    conn.prepareStatement(SELECT_CASES100K31_STATE_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(31);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("cases100k31")));
+                        cases100k31.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateCases100kData31 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return cases100k31;
+    }
+    
+    /**
+     * Method to get death data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return death data
+     */
+    public Map<String, Long> getStateDeathsData(Connection conn,
+                                           java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS_STATE_TOTALS_SQL =
+                "SELECT state, deaths "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY deaths;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateDeathsData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> deaths = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        deaths.put(resultSet.getString("state"),
+                                resultSet.getLong("deaths"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateDeathsData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths;
+    }
+    
+    /**
+     * Method to get death data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return death data
+     */
+    public Map<String, Long> getNewStateDeathsData(Connection conn,
+                                           java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS_STATE_DAILIES_SQL =
+                "SELECT state, deaths "
+                        + "FROM state_dailies INNER JOIN states "
+                        + "ON state_dailies.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY deaths;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getNewStateDeathsData no connection");
+            connect();
+        }
+        // declare variable
+        Map<String, Long> deaths = new HashMap<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS_STATE_DAILIES_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        deaths.put(resultSet.getString("state"),
+                                resultSet.getLong("deaths"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getNewStateDeathsData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths;
+    }
+    
+    /**
+     * Method to get deaths100k data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return deaths100k data
+     */
+    public List<StringDouble> getDeaths100kData(Connection conn,
+                java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS100K_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((deaths / population) * 100000, 5, false) AS deaths100k "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (deaths / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getDeaths100kData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> deaths100k = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS100K_COUNTRY_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("deaths100k")));
+                        deaths100k.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getDeaths10kData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths100k;
+    }
+    
+    /**
+     * Method to get deaths100k data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return deaths100k data
+     */
+    public List<StringDouble> getStateDeaths100kData(Connection conn,
+                               java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS100K_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((deaths / population) * 100000, 5, false) AS deaths100k "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (deaths / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateDeaths100kData no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> deaths100k = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS100K_STATE_TOTALS_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("deaths100k")));
+                        deaths100k.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateDeaths10kData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths100k;
+    }
+    
+    /**
+     * Method to get new deaths100k data from 16 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return deaths100k data
+     */
+    public List<StringDouble> getDeaths100kData16(Connection conn,
+                    java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS100K16_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((deaths / population) * 100000, 5, false) AS deaths100k16 "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (deaths / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getDeaths10kData16 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> deaths100k16 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS100K16_COUNTRY_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(16);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("deaths100k16")));
+                        deaths100k16.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getDeaths100kData16 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths100k16;
+    }
+    
+    /**
+     * Method to get new deaths100k data from 16 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return deaths100k data
+     */
+    public List<StringDouble> getStateDeaths100kData16(Connection conn,
+                    java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS100K16_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((deaths / population) * 100000, 5, false) AS deaths100k16 "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (deaths / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateDeaths10kData16 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> deaths100k16 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS100K16_STATE_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(16);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("deaths100k16")));
+                        deaths100k16.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateDeaths100kData16 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths100k16;
+    }
+    
+    /**
+     * Method to get new deaths100k data from 31 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return deaths100k data
+     */
+    public List<StringDouble> getDeaths100kData31(Connection conn,
+                    java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS100K31_COUNTRY_TOTALS_SQL =
+                "SELECT display, FORMAT((deaths / population) * 100000, 5, false) AS deaths100k31 "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S') "
+                        + "ORDER BY (deaths / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getDeaths10kData31 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> deaths100k31 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS100K31_COUNTRY_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(31);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("display"),
+                                cleanDouble(resultSet.getString("deaths100k31")));
+                        deaths100k31.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getDeaths100kData31 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths100k31;
+    }
+    
+    /**
+     * Method to get new deaths100k data from 31 days prior from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return deaths100k data
+     */
+    public List<StringDouble> getStateDeaths100kData31(Connection conn,
+                    java.sql.Date date) {
+        // Declare constant
+        final String SELECT_DEATHS100K31_STATE_TOTALS_SQL =
+                "SELECT state, FORMAT((deaths / population) * 100000, 5, false) AS deaths100k31 "
+                        + "FROM state_totals INNER JOIN states "
+                        + "ON state_totals.state_id = states.id "
+                        + "WHERE `date` = ? "
+                        + "ORDER BY (deaths / population) * 100000;";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getStateDeaths10kData31 no connection");
+            connect();
+        }
+        // declare variable
+        List<StringDouble> deaths100k31 = new ArrayList<>();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS100K31_STATE_TOTALS_SQL)) {
+                // add date - 16 days parameter
+                LocalDate pastDate = date.toLocalDate().minusDays(31);
+                java.sql.Date date1 = java.sql.Date.valueOf(pastDate);
+                statement.setDate(1, date1);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        StringDouble countryDouble = new StringDouble(
+                                resultSet.getString("state"),
+                                cleanDouble(resultSet.getString("deaths100k31")));
+                        deaths100k31.add(countryDouble);
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getStateDeaths100kData31 " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return deaths100k31;
+    }
+    
+    /**
+     * Method to get world data from the database
+     * @param conn to the database
+     * @param date of the data
+     * @return world data
+     */
+    public USAData getUSAData(Connection conn, java.sql.Date date) {
+        // Declare constant
+        final String SELECT_USA_TOTAL_SQL =
+                "SELECT cases, deaths, active, population "
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? AND display = 'USA';";
+        // test connection
+        if (conn == null) {
+            mResults.addResults("getUSAData no connection");
+            connect();
+        }
+        // declare variable
+        USAData usa = new USAData();
+        if (conn != null) {
+            try (
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_USA_TOTAL_SQL)) {
+                // add date parameter
+                statement.setDate(1, date);
+                try (
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
+                    // check if results
+                    while (resultSet.next()) {
+                        usa.setCases(resultSet.getLong("cases"));
+                        usa.setDeaths(resultSet.getLong("deaths"));
+                        usa.setActive(resultSet.getLong("active"));
+                        usa.setPopulation(resultSet.getLong("population"));
+                    }
+                }
+            } catch (SQLException e) {
+                mResults.addResults("getUSAData " + date.toString() + " " +
+                        e.getMessage());
+                return null;
+            }
+        }
+        return usa;
     }
 }

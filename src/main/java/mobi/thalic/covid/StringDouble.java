@@ -27,40 +27,40 @@ package mobi.thalic.covid;
  *
  * @author Gary Larson gary@thalic.mobi
  */
-public class CountryDouble implements Comparable {
+public class StringDouble implements Comparable {
     // Declare member variables
-    private String country;
+    private String string;
     private double value;
     
     /**
      * Default constructor
      */
-    public CountryDouble () {};
+    public StringDouble () {};
     
     /**
      * Constructor for all variables
-     * @param country to set
+     * @param string to set
      * @param value to set
      */
-    public CountryDouble (String country, double value) {
-        this.country = country;
+    public StringDouble (String string, double value) {
+        this.string = string;
         this.value = value;
     }
 
     /**
-     * Getter for country
-     * @return country
+     * Getter for string
+     * @return string
      */
-    public String getCountry() {
-        return country;
+    public String getString() {
+        return string;
     }
     
     /**
      * Setter for country
-     * @param country to set
+     * @param string to set
      */
-    public void setCountry(String country) {
-        this.country = country;
+    public void setString(String string) {
+        this.string = string;
     }
     
     /**
@@ -82,6 +82,6 @@ public class CountryDouble implements Comparable {
     @Override
     public int compareTo(Object o) {
         // compare Ascending
-        return Double.compare(this.value, ((CountryDouble)o).getValue());
+        return Double.compare(this.value, ((StringDouble)o).getValue());
     }
 }
