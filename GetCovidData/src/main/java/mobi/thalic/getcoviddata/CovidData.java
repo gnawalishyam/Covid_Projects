@@ -85,26 +85,28 @@ public class CovidData {
         // declare and initialize variable
         Connection conn = getDatabaseConnection();
         
-        mResults.addResults(" United States Results");
+        mResults.addResults("\n\n United States Results");
         processUnitedStatesScrape(conn);
         mResults.addResults("\n\n World Results");
         processWorldScrape(conn);
-        mResults.addResults("Completed World o meter scrape");
+        mResults.addResults("\n\n Completed World o meter scrape");
         // close connection
         databaseUtilities.closeConnection(conn);
         mResults.addResults("\n\n Get Stat Totals");
         getStatData();
-        mResults.addResults("Completed Stat Totals");
+        mResults.addResults("\n\n Completed Stat Totals");
         mResults.addResults("\n\n Calculate Totals");
         // declare and initialize variable
         conn = getDatabaseConnection();
-        calculateTotal(conn, YESTERDAY_DATE);
-        mResults.addResults("Completed Calaulate Totals");
         mResults.addResults("\n\n Calculate State Totals");
+        calculateTotal(conn, YESTERDAY_DATE);
+        mResults.addResults("\n\n Completed Calaulate Totals");
+        mResults.addResults("\n\n Calculate State Totals");
+        mResults.addResults("\n\n Completed Calaulate State Totals");
         calculateStateTotal(conn, YESTERDAY_DATE);
         // close connection
         databaseUtilities.closeConnection(conn);
-        mResults.addResults("Completed Calaulate State Totals");
+        
     }
     
     /**

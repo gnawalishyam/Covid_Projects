@@ -45,7 +45,7 @@ public class GetCovidData {
         //covidData.createCSVFile();
         //covidData.getStatData();
         //covidData.runCalculations("2020-12-28");
-        //covidData.runCalculationsYesterday();
+        covidData.runCalculationsYesterday();
         //JSONUtilities.processJsonArray();
         //covidData.getOwidData();
         System.out.println(results.getResults());

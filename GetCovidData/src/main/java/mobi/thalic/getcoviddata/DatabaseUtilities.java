@@ -1345,13 +1345,13 @@ public class DatabaseUtilities {
      */
     public Map<String, Long> getCasesData(Connection conn, java.sql.Date date) {
         // Declare constant
-        final String SELECT_CASES_COUNTRY_TOTALS_SQL = 
+        final String SELECT_CASES_COUNTRY_TOTALS_SQL =
                 "SELECT display, cases "
-                + "FROM country_totals INNER JOIN country_codes "
-                + "ON country_totals.country_id = country_codes.id "
-                + "WHERE `date` = ? "
-                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                + "ORDER BY cases;";
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
+                        + "ORDER BY cases;";
         // test connection
         if (conn == null) {
             mResults.addResults("getCaseData no connection");
@@ -1361,22 +1361,22 @@ public class DatabaseUtilities {
         Map<String, Long> cases = new HashMap<>();
         if (conn != null) {
             try (
-                // statement to use to get stat country id
-                PreparedStatement statement = 
-                       conn.prepareStatement(SELECT_CASES_COUNTRY_TOTALS_SQL)) {
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_CASES_COUNTRY_TOTALS_SQL)) {
                 // add date parameter
                 statement.setDate(1, date);
                 try (
-                    // run query and get results
-                    ResultSet resultSet = statement.executeQuery()) {
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
                     // check if results
                     while (resultSet.next()) {
-                        cases.put(resultSet.getString("display"), 
+                        cases.put(resultSet.getString("display"),
                                 resultSet.getLong("cases"));
                     }
                 }
             } catch (SQLException e) {
-                mResults.addResults("getCasesData " + date.toString() + " " + 
+                mResults.addResults("getCasesData " + date.toString() + " " +
                         e.getMessage());
                 return null;
             }
@@ -1437,16 +1437,16 @@ public class DatabaseUtilities {
      * @param date of the data
      * @return death data
      */
-    public Map<String, Long> getDeathsData(Connection conn, 
-            java.sql.Date date) {
+    public Map<String, Long> getDeathsData(Connection conn,
+                                           java.sql.Date date) {
         // Declare constant
-        final String SELECT_DEATHS_COUNTRY_TOTALS_SQL = 
+        final String SELECT_DEATHS_COUNTRY_TOTALS_SQL =
                 "SELECT display, deaths "
-                + "FROM country_totals INNER JOIN country_codes "
-                + "ON country_totals.country_id = country_codes.id "
-                + "WHERE `date` = ? "
-                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                + "ORDER BY deaths;";
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
+                        + "ORDER BY deaths;";
         // test connection
         if (conn == null) {
             mResults.addResults("getDeathsData no connection");
@@ -1456,22 +1456,22 @@ public class DatabaseUtilities {
         Map<String, Long> deaths = new HashMap<>();
         if (conn != null) {
             try (
-                // statement to use to get stat country id
-                PreparedStatement statement = 
-                       conn.prepareStatement(SELECT_DEATHS_COUNTRY_TOTALS_SQL)) {
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_DEATHS_COUNTRY_TOTALS_SQL)) {
                 // add date parameter
                 statement.setDate(1, date);
                 try (
-                    // run query and get results
-                    ResultSet resultSet = statement.executeQuery()) {
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
                     // check if results
                     while (resultSet.next()) {
-                        deaths.put(resultSet.getString("display"), 
+                        deaths.put(resultSet.getString("display"),
                                 resultSet.getLong("deaths"));
                     }
                 }
             } catch (SQLException e) {
-                mResults.addResults("getCasesData " + date.toString() + " " + 
+                mResults.addResults("getDeathsData " + date.toString() + " " +
                         e.getMessage());
                 return null;
             }
@@ -1533,16 +1533,16 @@ public class DatabaseUtilities {
      * @param date of the data
      * @return active data
      */
-    public Map<String, Long> getActiveData(Connection conn, 
-            java.sql.Date date) {
+    public Map<String, Long> getActiveData(Connection conn,
+                                           java.sql.Date date) {
         // Declare constant
-        final String SELECT_ACTIVE_COUNTRY_TOTALS_SQL = 
+        final String SELECT_ACTIVE_COUNTRY_TOTALS_SQL =
                 "SELECT display, active "
-                + "FROM country_totals INNER JOIN country_codes "
-                + "ON country_totals.country_id = country_codes.id "
-                + "WHERE `date` = ? "
-                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                + "ORDER BY active;";
+                        + "FROM country_totals INNER JOIN country_codes "
+                        + "ON country_totals.country_id = country_codes.id "
+                        + "WHERE `date` = ? "
+                        + "AND country_codes.alpha_2 NOT IN ('R', 'S')"
+                        + "ORDER BY active;";
         // test connection
         if (conn == null) {
             mResults.addResults("getActiveData no connection");
@@ -1552,22 +1552,22 @@ public class DatabaseUtilities {
         Map<String, Long> active = new HashMap<>();
         if (conn != null) {
             try (
-                // statement to use to get stat country id
-                PreparedStatement statement = 
-                       conn.prepareStatement(SELECT_ACTIVE_COUNTRY_TOTALS_SQL)) {
+                    // statement to use to get stat country id
+                    PreparedStatement statement =
+                            conn.prepareStatement(SELECT_ACTIVE_COUNTRY_TOTALS_SQL)) {
                 // add date parameter
                 statement.setDate(1, date);
                 try (
-                    // run query and get results
-                    ResultSet resultSet = statement.executeQuery()) {
+                        // run query and get results
+                        ResultSet resultSet = statement.executeQuery()) {
                     // check if results
                     while (resultSet.next()) {
-                        active.put(resultSet.getString("display"), 
+                        active.put(resultSet.getString("display"),
                                 resultSet.getLong("active"));
                     }
                 }
             } catch (SQLException e) {
-                mResults.addResults("getActiveData " + date.toString() + " " + 
+                mResults.addResults("getActiveData " + date.toString() + " " +
                         e.getMessage());
                 return null;
             }
@@ -1626,112 +1626,14 @@ public class DatabaseUtilities {
     }
     
     /**
-     * Method to get recovered data from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return recovered data
-     */
-    public Map<String, Long> getRecoveredData(Connection conn, 
-            java.sql.Date date) {
-        // Declare constant
-        final String SELECT_RECOVERED_COUNTRY_TOTALS_SQL = 
-                "SELECT display, cases - active - deaths AS recovered "
-                + "FROM country_totals INNER JOIN country_codes "
-                + "ON country_totals.country_id = country_codes.id "
-                + "WHERE `date` = ? "
-                + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                + "ORDER BY recovered DESC;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getRecoveredData no connection");
-            connect();
-        }
-        // declare variable
-        Map<String, Long> recovered = new HashMap<>();
-        if (conn != null) {
-            try (
-                // statement to use to get stat country id
-                PreparedStatement statement = 
-                       conn.prepareStatement(SELECT_RECOVERED_COUNTRY_TOTALS_SQL)) {
-                // add date parameter
-                statement.setDate(1, date);
-                try (
-                    // run query and get results
-                    ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        recovered.put(resultSet.getString("display"), 
-                                resultSet.getLong("recovered"));
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getRecoveredData " + date.toString() + " " + 
-                        e.getMessage());
-                return null;
-            }
-        }
-        return recovered;
-    }
-    
-    /**
-     * Method to get recovered data from the database
-     * @param conn to the database
-     * @param date of the data
-     * @return recovered data
-     */
-    public List<StringDouble> getRecoveredPercentData(Connection conn,
-                                              java.sql.Date date) {
-        // Declare constant
-        final String SELECT_RECOVERED_PERCENT_COUNTRY_TOTALS_SQL =
-                "SELECT display, FORMAT(((cases - `active` - deaths) / cases) "
-                        + "* 100, 5, false) AS recoveredPercent "
-                        + "FROM country_totals INNER JOIN country_codes "
-                        + "ON country_totals.country_id = country_codes.id "
-                        + "WHERE `date` = ? "
-                        + "AND country_codes.alpha_2 NOT IN ('R', 'S', 'W')"
-                        + "ORDER BY ((cases - `active` - deaths) / cases) * "
-                        + "100 DESC;";
-        // test connection
-        if (conn == null) {
-            mResults.addResults("getRecoveredPercentData no connection");
-            connect();
-        }
-        // declare variable
-        List<StringDouble> recoveredPercent = new ArrayList<>();
-        if (conn != null) {
-            try (
-                    // statement to use to get stat country id
-                    PreparedStatement statement =
-                            conn.prepareStatement(
-                                SELECT_RECOVERED_PERCENT_COUNTRY_TOTALS_SQL)) {
-                // add date parameter
-                statement.setDate(1, date);
-                try (
-                        // run query and get results
-                        ResultSet resultSet = statement.executeQuery()) {
-                    // check if results
-                    while (resultSet.next()) {
-                        recoveredPercent.add(new StringDouble(
-                            resultSet.getString("display"),
-                            cleanDouble(resultSet
-                                    .getString("recoveredPercent"))));
-                    }
-                }
-            } catch (SQLException e) {
-                mResults.addResults("getRecoveredPercentData " + date.toString() 
-                        + " " + e.getMessage());
-                return null;
-            }
-        }
-        return recoveredPercent;
-    }
-    
-    /**
      * Method to remove commas from string
      * @param string to clean
      * @return number in double format
      */
     private double cleanDouble (String string) {
+        if (string == null || string.isBlank()) {
+            return 0.0;
+        }
         string = string.replace(",", "");
         double tempDouble = Double.parseDouble(string);
         return tempDouble;
