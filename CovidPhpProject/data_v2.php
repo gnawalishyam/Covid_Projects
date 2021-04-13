@@ -147,9 +147,9 @@
             // set deaths per 100k population rank
             $jsonEntry["totalDeaths100kRank"] = intval($c_rows[$i]["total_deaths100k_rank"]);
             // set deaths per 100k population score
-            $jsonEntry["totalDeaths10kScore"] = intval($c_rows[$i]["total_deaths100k_score"]);
+            $jsonEntry["totalDeaths100kScore"] = intval($c_rows[$i]["total_deaths100k_score"]);
             // set deaths per 100k population score
-            $jsonEntry["totalDeaths10kGrade"] = $c_rows[$i]["total_deaths100k_grade"];
+            $jsonEntry["totalDeaths100kGrade"] = $c_rows[$i]["total_deaths100k_grade"];
             // set active cases per 100k population
             $jsonEntry["totalActiveCases100k"] = floatval($c_rows[$i]["total_active100k"]);
             // set active cases per 100k population rank
